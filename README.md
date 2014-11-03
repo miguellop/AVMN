@@ -1,4 +1,4 @@
-cnpmdm
+abncdm
 ======
 
-Cooperative Negotiation Protocol for Multiagent Decision Making
+Agent-Based Negotiation for Cooperative Decision Making
