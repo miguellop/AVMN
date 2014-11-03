@@ -1,0 +1,3 @@
+%%
+experimenttypestr = 'random';
+negoDSNPc
