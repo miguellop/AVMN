@@ -24,12 +24,12 @@ end
 v = fcnview(MA, Ag);
 
 MA.Nroundslimit = 50;
-MA.sigmamin = 1;
-MA.sigmamax = 200;
+MA.sigmamin = 2000;
+MA.sigmamax = 2000;
 MA.p = 2;% equivale al alfa del artículo 
 % sigma = sigmamin+(sigmamax-sigmamin)*G^((1-1/Nroundslimit)*p)
 MA.kr = 200;% se utiliza para el caso de reannealing
-MA.Type = 1;% a 1 implica que está activado DSNPc, a 0 el experimento de referencia
+
 clear sol;
 %ds = dataset({rand(length(upfactors),4, nexperiments),'EvalAverage','EvalProduct','Nrounds','MaxDistance'},...
 %    {zeros(9,5),'FailureRate100','avgUtility','prodUtility', 'avgDistance', 'avgNrounds'},...
@@ -45,8 +45,6 @@ nexperiments = 1;
 %p = [0 1e-6 0.3333 1 3 20];
 %p=1e-6;
 p=0;
-voidness = {'ref', '0', '0-25', '0-5', '0-75', '0-95'};
-
 
 for z=1:length(p)  
     output = [];
