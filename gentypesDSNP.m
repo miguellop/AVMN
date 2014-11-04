@@ -1,7 +1,7 @@
 %%
 % CES Utility Function
 d=[0 0;100 100];
-gamma = 0.01;
+gamm = 0.01;
 r1 = 1; r2 = 1;
 beta1 = [0.0275 0.8251 0.0110 0.4719]; 
 beta2 = [0.2705 0.6977 0.8810 0.7671];
@@ -9,8 +9,8 @@ alfa1 = [0.5159 0.4841; 0.9396 0.0604; 0.3703 0.6297; 0.9536 0.0464];
 alfa2 = [0.6742 0.3258; 0.5322 0.4678; 0.4414 0.5586; 0.5080 0.4920];
 for index=1:5
     CES = index;
-    f1=fCES(d, gamma, beta1(CES), alfa1(CES,:), r1, 1, true);
-    f2=fCES(d, gamma, beta2(CES), alfa2(CES,:), r2, 0, true);
+    f1=fCES(d, gamm, beta1(CES), alfa1(CES,:), r1, 1, true);
+    f2=fCES(d, gamm, beta2(CES), alfa2(CES,:), r2, 0, true);
     UF{2*index-1} = f1;
     UF{2*index} = f2;
 end
