@@ -26,7 +26,7 @@ classdef fcnview < handle
             hold on;
             
             subplot(3,1,2);
-            axis([0 MA.Nroundslimit 0 1.1]);
+            axis([0 MA.MaxRounds 0 1.1]);
             hold on;
             title('Current Utilities', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('Round Number')
@@ -38,9 +38,9 @@ classdef fcnview < handle
             subplot(3,1,1);
             scatter(mesh(:,1), mesh(:,2), '*');
             subplot(3,1,2);
-            plot(evnt.AffectedObject.Nround, evnt.AffectedObject.ContractsEval(:,1), '*', 'MarkerSize', 5);
+            plot(evnt.AffectedObject.Nround, evnt.AffectedObject.PrivEval(:,1), '*', 'MarkerSize', 5);
             subplot(3,1,3);
-            plot(1:evnt.AffectedObject.Nround, evnt.AffectedObject.GP, '*', 'MarkerSize', 5); 
+            plot(1:evnt.AffectedObject.Nround, evnt.AffectedObject.D, '*', 'MarkerSize', 5); 
             title('Group Preferences', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('Number')
             ylabel('Group Preference')

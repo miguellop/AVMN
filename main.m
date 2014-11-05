@@ -1,71 +1,52 @@
-%%
-%Código para ejecutar experimentos de negociación
-experimenttypestr = 'testbed';
-%experimenttypestr = 'random';
+%%%%%%%%%
+% Main
+%%%%%%%%%
+clear experiment;
 
-clear MA; clear Ag; clear v;
-d=[0 0;100 100];
-nagents = 2;
+experiment.Type = 'testbed';
+experiment.Nexp = 1;
+experiment.UF = 'UFfix';
+experiment.Domain = [0 0;100 100];
+experiment.Mediator.MaxRounds = 50;
+experiment.Mediator.Selection = [2000 2000 2 200];
+experiment.Mediator.Type = 3;
+                    % 1 - Yager+Selection(determinista) 
+                    % 2 - Yager+Selection(probabilístico) 
+                    % 3 - Suma+Selection(determinista)
+                    % 4 - Suma+Selection(probabilístico)
 
-if strcmp(experimenttypestr, 'random')
-    load UFrandom;
-else
-    load UFfix
-end
-
-%Ivan: UF es un cell-array de handles a funciones del tipo @(x,d) donde
-% d=[0 0 0 0;100 100 100 100] p.ej. para 4 issues y rangos 0-100 para cada
-% issue
+experiment.Agent.Types = [2 2];
+                    % 1 - Selfish
+                    % 2 - Cooperative
+%%%%%%                                       
+load (experiment.UF); 
 
 MA = medagent();
-for i=1:nagents
-    Ag{i} = agent(i, UF{i}, MA);
+MA.Type = experiment.Mediator.Type;              
+MA.MaxRounds = experiment.Mediator.MaxRounds;
+MA.sg = experiment.Mediator.Selection;
+    % sg = sigmamin+(sigmamax-sigmamin)*G^((1-1/Nroundslimit)*p)
+
+for i=1:length(experiment.Agent.Types)
+    Ag{i} = agent(i, UF{i}, MA, experiment.Agent.Types(i));
 end
 v = fcnview(MA, Ag);
 
-MA.Nroundslimit = 50;
-MA.sigmamin = 2000;
-MA.sigmamax = 2000;
-MA.p = 2;% equivale al alfa del artículo 
-% sigma = sigmamin+(sigmamax-sigmamin)*G^((1-1/Nroundslimit)*p)
-MA.kr = 200;% se utiliza para el caso de reannealing
-
-clear sol;
 %ds = dataset({rand(length(upfactors),4, nexperiments),'EvalAverage','EvalProduct','Nrounds','MaxDistance'},...
 %    {zeros(9,5),'FailureRate100','avgUtility','prodUtility', 'avgDistance', 'avgNrounds'},...
 %    'ObsNames',{'UpStep0','UpStep0.25','UpStep0.5','UpStep0.75','UpStep1','UpStep1.25','UpStep1.5','UpStep1.75','UpStep2'});
-%p = [0 1e-6 0.3333 1 2 3 5 10 20];
 
-nexperiments = 1;
-%Ivan: p es el parámetro que fija el voidness: 0 es el experimento de
-%referencia (sin aplicar el algoritmo), 1e-6 es voidness 0, 0.3333 es
-%voidness 0.25 y así sucesivamente. El resultado con las utilidades de cada
-%agentes vienen dados en output
-
-%p = [0 1e-6 0.3333 1 3 20];
-%p=1e-6;
-p=0;
-
-for z=1:length(p)  
-    output = [];
-    if p(z) == 0
-        MA.Type = 0;
-    else
-        MA.Type = 1;
-    end
-    MA.QGA = @(x) x.^p(z); %p-the exponent- defines how important is to consider many agents 
-    for j=1:nexperiments
-        clear Msh;
-        v.Reset(MA);
-        Msh = meshdsnp();
-        tic
-        s = MA.Negotiate(Msh);
-        t(z) = toc;
-        output = [output s.contractsEval(:,1)];
-        disp(['Nexp: ' num2str(j)])
-    end
-%    eval(['save output_' experimenttypestr '_' voidness{z} ' output']); 
+for i=1:experiment.Nexp
+    clear Msh;
+    v.Reset(MA);
+    Msh = meshdsnp();
+    tic
+    s = MA.Negotiate(Msh);
+    t(i) = toc;
+    disp(['Nexp: ' num2str(i)])
 end
+%    eval(['save output_' experimenttypestr '_' voidness{z} ' output']); 
+
 
 
 

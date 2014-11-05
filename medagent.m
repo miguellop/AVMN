@@ -1,22 +1,17 @@
 classdef medagent < handle
     properties
-        Nroundslimit = 500;
+        MaxRounds = 500;
         Nagents = 0;
-        ContractsEval
+        PubEval
+        PrivEval
         ReceptionFlags
         Nround
         DeltaTolerance = 1e-3;
         Msh
-        Type %0-Reference 1-DSNPc activado
+        Type
                  
-        GP
-        QGA
-        RPolicy
-        wt
-        sigmamin
-        sigmamax
-        p
-        kr
+        D
+        sg
     end
     
     properties (SetObservable = true)
@@ -26,19 +21,18 @@ classdef medagent < handle
     methods
         function output = Negotiate(MA, Msh)          
             MA.Msh = [];
-            MA.Msh = Msh; MA.Nround = 1; MA.GP = [];
-            MA.computeWeights();
-            
+            MA.Msh = Msh; MA.Nround = 1; MA.D = [];
+                        
             notify(MA, 'ProposeMesh', eventProposeMesh(Msh));
             MA.waitAgentsResponses();
             MA.computeGroupPreferences();
             
-            for i=2:MA.Nroundslimit
+            for i=2:MA.MaxRounds
                 MA.Nround = i;     
                 notify(MA, 'ProposeMesh', eventProposeMesh(Msh));
                 MA.waitAgentsResponses();
                 MA.computeGroupPreferences();    
-                MA.searchProcess();
+                MA.selectionProcess();
                 convergence = MA.AssessConvergence();
                 MA.ContractsEvalReady = true; %Orden de pintado
                 
@@ -48,9 +42,10 @@ classdef medagent < handle
             end
             
             output.agreement = MA.Msh.currentpoint;
-            output.contractsEval = MA.ContractsEval;
+            output.PubEval = MA.PubEval;
+            output.PrivEval = MA.PrivEval;
             output.mesh = MA.Msh;
-            output.GP = MA.GP;
+            output.D = MA.D;
         end
         
         function RegisterAgent(MA, A)
@@ -58,8 +53,9 @@ classdef medagent < handle
             MA.Nagents = MA.Nagents+1;
         end
         
-        function AddMeshEval(MA, AgentIndex, ContractsEval)
-            MA.ContractsEval(AgentIndex, :) = ContractsEval;
+        function AddMeshEval(MA, AgentIndex, PubEval, PrivEval)
+            MA.PubEval(:, AgentIndex) = PubEval;
+            MA.PrivEval(:, AgentIndex) = PrivEval;
             MA.ReceptionFlags(AgentIndex) = 1;
         end
         
@@ -77,43 +73,35 @@ classdef medagent < handle
             obj.ReceptionFlags = zeros(1, obj.Nagents);
         end
         
-        function computeWeights(obj)
-            clear wt;
-            for t=1:obj.Nagents
-                wt(t) = obj.QGA(t/obj.Nagents)-obj.QGA((t-1)/obj.Nagents);
-            end
-            obj.wt = wt';
-        end
-        
         function computeGroupPreferences(obj)
-            if obj.Type
-                obj.GP(:, obj.Nround) = sum(repmat(obj.wt, 1, obj.Msh.npoints+1).*sort(obj.ContractsEval, 'descend'))';
+            if obj.Type == 1 || obj.Type == 2
+                St = sum(obj.PubEval);        %Vector con sumas de evaluaciones de cada Agente St
+                Sagg = sum(St);                     %Agregación de evaluaciones de todos los Agentes
+                wt = St/Sagg;                       %Vector con pesos por cada Agente
+                
+                obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
             else
-                obj.GP(:, obj.Nround) = sum(obj.ContractsEval)';
-%                obj.GP(:, obj.Nround) = prod(obj.ContractsEval)';
-%                obj.GP(:, obj.Nround) = min(obj.ContractsEval)';
+                obj.D(:, obj.Nround) = sum(obj.PubEval./obj.Nagents,2);
             end
         end
         
-        function searchProcess(obj)
-            if obj.Type
-                if obj.Nround<obj.kr
-                    sigma = obj.sigmamin + (obj.sigmamax-obj.sigmamin)*max(obj.GP(:, obj.Nround))^(obj.p*(1-obj.Nround/obj.Nroundslimit))
+        function selectionProcess(obj)
+            if obj.Type == 2 || obj.Type == 4
+                if obj.Nround<obj.sg(4)
+                    sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*max(obj.D(:, obj.Nround))^(obj.sg(3)*(1-obj.Nround/obj.MaxRounds))
                 else
-                    sigma = obj.sigmamin + (obj.sigmamax-obj.sigmamin)*max(obj.GP(:, obj.Nround))^(obj.p*(1-(obj.Nround-obj.kr)/(obj.Nroundslimit-obj.kr)))
+                    sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*max(obj.D(:, obj.Nround))^(obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))))
                 end
-                P = cumsum(obj.GP(:, obj.Nround).^sigma/sum(obj.GP(:, obj.Nround).^sigma));
+                P = cumsum(obj.D(:, obj.Nround).^sigma/sum(obj.D(:, obj.Nround).^sigma));
                 winnercontract = find(not(rand()>=P),1);
             else
-                [contract winnercontract] = max(obj.GP(:, obj.Nround));
+                [contract, winnercontract] = max(obj.D(:, obj.Nround));
             end
             if winnercontract == 1 %The maximum support is for the current contract
                 obj.Msh.Contract();
-                %disp 'C'
             else
                 obj.Msh.currentpoint = obj.Msh.meshpoints(winnercontract-1,:);
                 obj.Msh.Expand();
-                %disp 'E'
             end
         end
     end
