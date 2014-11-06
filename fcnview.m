@@ -32,19 +32,26 @@ classdef fcnview < handle
             xlabel('Round Number')
             ylabel('Utility')
             box; grid;
+            
+            subplot(3,1,3);
+            axis([0 MA.MaxRounds 0 1.5]);
+            hold on;
+            title('Group Preferences', 'FontSize', 11, 'FontWeight', 'bold')
+            xlabel('Number')
+            ylabel('Group Preference')
+            box; grid;
         end
         function listenUpdateGraph(obj, src, evnt)
             mesh = [evnt.AffectedObject.Msh.currentpoint;evnt.AffectedObject.Msh.meshpoints];
             subplot(3,1,1);
             scatter(mesh(:,1), mesh(:,2), '*');
             subplot(3,1,2);
-            plot(evnt.AffectedObject.Nround, evnt.AffectedObject.PrivEval(:,1), '*', 'MarkerSize', 5);
+            plot(evnt.AffectedObject.Nround, ...
+                evnt.AffectedObject.PrivEval(evnt.AffectedObject.Winner,:), '*', 'MarkerSize', 5);
             subplot(3,1,3);
-            plot(1:evnt.AffectedObject.Nround, evnt.AffectedObject.D, '*', 'MarkerSize', 5); 
-            title('Group Preferences', 'FontSize', 11, 'FontWeight', 'bold')
-            xlabel('Number')
-            ylabel('Group Preference')
-            box; grid;
+            plot(evnt.AffectedObject.Nround, ...
+                evnt.AffectedObject.D(:, evnt.AffectedObject.Nround), '*', 'MarkerSize', 5); 
+
             drawnow();
         end
     end

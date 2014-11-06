@@ -6,7 +6,7 @@ classdef meshdsnp < handle
         type = 'GPS2N';
         genvect;        
         meshpoints;            
-        deltam = 100;
+        deltam = 10;
         expfactor = 2;
         confactor = 0.5;
         npoints

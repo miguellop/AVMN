@@ -2,7 +2,7 @@
 %BELLs Random (UFrandom)
 
 ni = 2; %nissues
-na = 1; %nagents
+na = 2; %nagents
 d=[zeros(1,ni);100*ones(1,ni)];
 
 for index = 1:na
@@ -16,7 +16,7 @@ end
 %[C h]=  contour(x.x,x.y,f(x,d),5,'LineStyle',':'); clabel(C, h,'manual','fontsize',15);
 
 save UFrandom UF
-
+%%
 figure
 for i=1:na
     plotSurfs(UF{i});
@@ -24,14 +24,14 @@ for i=1:na
 end
 axis auto
 %%
-%BELL testbed (UFfix)
-centers = [35 35; 65 65];
+%BELL fix 
+centers = [25 75 25 75; 25 25 75 75]';
 
-w = [50 50];
+w = [100 100 100 100];
 
-h = [1,1];
+h = [1,1,1,1];
 
-for i=1:2
+for i=1:4
     UF{i} = fbellfix(centers(i,:),w(i),h(i), false);
 end
 save UFfix UF
@@ -40,7 +40,7 @@ save UFfix UF
 % [C h]=  contour(x.x,x.y,UF{1}(x,d),5,'LineStyle',':'); clabel(C, h,'manual','fontsize',15);
 
 figure
-for i=1:2
+for i=1:4
     plotSurfs(UF{i});
     hold on;
 end

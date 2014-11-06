@@ -15,17 +15,20 @@ classdef agent < handle
         %% RESPONSE STRATEGY
         function ResponseStrategy(A, src, evnt)
             priveval = A.UF([evnt.mesh.currentpoint; evnt.mesh.meshpoints], evnt.mesh.domain);
-            sumpriveval = sum(priveval);
             [maxpriveval, indmaxpriveval] = max(priveval);
-            if A.Type == 1
-                pubeval = zeros(evnt.mesh.npoints+1, 1);
-                pubeval(indmaxpriveval) = 1;
-            else
-                if max(priveval) == 0
-                    priveval = ones(evnt.mesh.npoints+1,1);
+            if A.Type == 1  %Selfish
+                if maxpriveval == 0
+                    pubeval = ones(evnt.mesh.npoints+1,1);
+                else
+                    pubeval = zeros(evnt.mesh.npoints+1, 1);
+                    pubeval(indmaxpriveval) = 1;
                 end
-                priveval = priveval/sum(priveval);
-                pubeval = priveval;
+            else            %Cooperative
+                if maxpriveval == 0
+                    pubeval = ones(evnt.mesh.npoints+1,1);
+                else
+                    pubeval = priveval/maxpriveval;
+                end
             end
             src.AddMeshEval(A.AgentIndex, pubeval, priveval);
         end

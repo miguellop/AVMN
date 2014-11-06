@@ -1,21 +1,19 @@
 %%%%%%%%%
 % Main
 %%%%%%%%%
-clear experiment;
+clear all;
 
 experiment.Type = 'testbed';
 experiment.Nexp = 1;
 experiment.UF = 'UFfix';
 experiment.Domain = [0 0;100 100];
 experiment.Mediator.MaxRounds = 50;
-experiment.Mediator.Selection = [2000 2000 2 200];
-experiment.Mediator.Type = 3;
-                    % 1 - Yager+Selection(determinista) 
-                    % 2 - Yager+Selection(probabilístico) 
-                    % 3 - Suma+Selection(determinista)
-                    % 4 - Suma+Selection(probabilístico)
-
-experiment.Agent.Types = [2 2];
+experiment.Mediator.Selection = [200 200 2 200];
+experiment.Mediator.Type = 2;
+                    % 1 - Referencia
+                    % 2 - Yager
+                    
+experiment.Agent.Types = [2 2 2 1];
                     % 1 - Selfish
                     % 2 - Cooperative
 %%%%%%                                       

@@ -9,6 +9,7 @@ classdef medagent < handle
         DeltaTolerance = 1e-3;
         Msh
         Type
+        Winner
                  
         D
         sg
@@ -21,13 +22,8 @@ classdef medagent < handle
     methods
         function output = Negotiate(MA, Msh)          
             MA.Msh = [];
-            MA.Msh = Msh; MA.Nround = 1; MA.D = [];
-                        
-            notify(MA, 'ProposeMesh', eventProposeMesh(Msh));
-            MA.waitAgentsResponses();
-            MA.computeGroupPreferences();
-            
-            for i=2:MA.MaxRounds
+            MA.Msh = Msh; MA.D = [];
+            for i=1:MA.MaxRounds
                 MA.Nround = i;     
                 notify(MA, 'ProposeMesh', eventProposeMesh(Msh));
                 MA.waitAgentsResponses();
@@ -35,12 +31,12 @@ classdef medagent < handle
                 MA.selectionProcess();
                 convergence = MA.AssessConvergence();
                 MA.ContractsEvalReady = true; %Orden de pintado
-                
+
                 if convergence == true
                     break;
                 end
             end
-            
+
             output.agreement = MA.Msh.currentpoint;
             output.PubEval = MA.PubEval;
             output.PrivEval = MA.PrivEval;
@@ -74,35 +70,37 @@ classdef medagent < handle
         end
         
         function computeGroupPreferences(obj)
-            if obj.Type == 1 || obj.Type == 2
-                St = sum(obj.PubEval);        %Vector con sumas de evaluaciones de cada Agente St
-                Sagg = sum(St);                     %Agregación de evaluaciones de todos los Agentes
-                wt = St/Sagg;                       %Vector con pesos por cada Agente
+            if obj.Type == 2                    %Yager
+                St = sum(obj.PubEval);          %Vector con sumas de evaluaciones de cada Agente St
+                Sagg = sum(St);                 %Agregación de evaluaciones de todos los Agentes
+                wt = St/Sagg;                   %Vector con pesos por cada Agente
                 
                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
-            else
-                obj.D(:, obj.Nround) = sum(obj.PubEval./obj.Nagents,2);
+                
+            else                                %Sumas de preferencias de cada agente
+                obj.D(:, obj.Nround) = sum(obj.PubEval,2)/(obj.Nagents);
             end
         end
         
         function selectionProcess(obj)
-            if obj.Type == 2 || obj.Type == 4
-                if obj.Nround<obj.sg(4)
-                    sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*max(obj.D(:, obj.Nround))^(obj.sg(3)*(1-obj.Nround/obj.MaxRounds))
-                else
-                    sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*max(obj.D(:, obj.Nround))^(obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))))
-                end
-                P = cumsum(obj.D(:, obj.Nround).^sigma/sum(obj.D(:, obj.Nround).^sigma));
-                winnercontract = find(not(rand()>=P),1);
+            Gd = obj.D(:,obj.Nround);
+            G = max(Gd);
+            if obj.Nround<obj.sg(4)
+                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^(obj.sg(3)*(1-obj.Nround/obj.MaxRounds));
             else
-                [contract, winnercontract] = max(obj.D(:, obj.Nround));
+                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^(obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))));
             end
+            sigma
+            P = cumsum(Gd.^sigma/sum(Gd.^sigma));
+            winnercontract = find(not(rand()>=P),1);
+            
             if winnercontract == 1 %The maximum support is for the current contract
                 obj.Msh.Contract();
             else
                 obj.Msh.currentpoint = obj.Msh.meshpoints(winnercontract-1,:);
                 obj.Msh.Expand();
             end
+            obj.Winner = winnercontract;
         end
     end
           
