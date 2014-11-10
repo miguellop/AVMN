@@ -48,14 +48,17 @@ experiment.Agent.Types = [1 1 1 1;...
                     % 4 - eSAg (Exagerate Selfish)
 %%%%%%                                       
 load (experiment.UF); 
-MA = medagent();
-MA.MaxRounds = experiment.Mediator.MaxRounds;
 
 for imdtype=1:nMdTypes
-    MA.Type = experiment.Mediator.Types(imdtype);
+    
     for imdsgm=1:nMdSgm
-        MA.sg = experiment.Mediator.Sgm(imdsgm,:);
+        
         for iagtype=1:nAgTypes
+            clear MA;
+            MA = medagent();
+            MA.MaxRounds = experiment.Mediator.MaxRounds;
+            MA.sg = experiment.Mediator.Sgm(imdsgm,:);
+            MA.Type = experiment.Mediator.Types(imdtype);
             for i=1:nAgs
                 Ag{i} = agent(i, UF{i}, MA, experiment.Agent.Types(iagtype,i));
             end
