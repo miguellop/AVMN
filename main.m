@@ -3,46 +3,81 @@
 %%%%%%%%%
 clear all;
 
-experiment.Type = 'testbed';
 experiment.Nexp = 1;
 experiment.UF = 'UFfix';
 experiment.Domain = [0 0;100 100];
 experiment.Mediator.MaxRounds = 50;
-experiment.Mediator.Selection = [200 200 2 200];
-experiment.Mediator.Type = 2;
-                    % 1 - Referencia
-                    % 2 - Yager
+
+experiment.Mediator.Types = [1 2]; nMdTypes = 2;
+                    % 1 - RMd (Reference Mediator)
+                    % 2 - YMd (Yager Mediator)
+experiment.Mediator.Sgm = [200 200 2 200;0 200 2 200]; nMdSgm = 2;
+                    % Sgm(1,:)=>(sgmn), Sgm(2,:)=>(sgmy)
+
                     
-experiment.Agent.Types = [2 2 2 1];
-                    % 1 - Selfish
-                    % 2 - Cooperative
+experiment.Agent.Types = [1 1 1 1;...
+                          2 1 1 1;...
+                          2 2 1 1;...
+                          2 2 2 1;...
+                          2 2 2 2;...
+                            
+                          3 3 3 3;...
+                          4 4 4 4;...
+                          
+                          4 4 3 3;...
+                            
+                          4 1 1 1;...
+                          4 4 1 1;...
+                          4 4 4 1;...
+                          
+                          4 2 2 2;...
+                          4 4 2 2;...
+                          4 4 4 2;...
+                          
+                          3 1 1 1;...
+                          3 3 1 1;...
+                          3 3 3 1;...
+                          
+                          3 2 2 2;...
+                          3 3 2 2;...
+                          3 3 3 2;
+                            ]; nAgTypes = size(experiment.Agent.Types,1); nAgs = size(experiment.Agent.Types,2);
+                    % 1 - CAg (Cooperative)
+                    % 2 - SAg (Selfish)
+                    % 3 - eCAg (Exagerate Cooperative)
+                    % 4 - eSAg (Exagerate Selfish)
 %%%%%%                                       
 load (experiment.UF); 
-
 MA = medagent();
-MA.Type = experiment.Mediator.Type;              
 MA.MaxRounds = experiment.Mediator.MaxRounds;
-MA.sg = experiment.Mediator.Selection;
-    % sg = sigmamin+(sigmamax-sigmamin)*G^((1-1/Nroundslimit)*p)
 
-for i=1:length(experiment.Agent.Types)
-    Ag{i} = agent(i, UF{i}, MA, experiment.Agent.Types(i));
+for imdtype=1:nMdTypes
+    MA.Type = experiment.Mediator.Types(imdtype);
+    for imdsgm=1:nMdSgm
+        MA.sg = experiment.Mediator.Sgm(imdsgm,:);
+        for iagtype=1:nAgTypes
+            for i=1:nAgs
+                Ag{i} = agent(i, UF{i}, MA, experiment.Agent.Types(iagtype,i));
+            end
+            v = fcnview(MA, Ag);
+
+            for i=1:experiment.Nexp
+                clear Msh;
+                v.Reset(MA);
+                Msh = meshdsnp();
+                tic
+                s = MA.Negotiate(Msh);
+                t(i) = toc;
+                disp(['Mediator: ' num2str(imdtype) ' Sigma: ' num2str(imdsgm-1) ' Ag: ' ...
+                    num2str(experiment.Agent.Types(iagtype,:))])
+            end
+            %%Save experiment
+            
+        end
+    end
 end
-v = fcnview(MA, Ag);
 
-%ds = dataset({rand(length(upfactors),4, nexperiments),'EvalAverage','EvalProduct','Nrounds','MaxDistance'},...
-%    {zeros(9,5),'FailureRate100','avgUtility','prodUtility', 'avgDistance', 'avgNrounds'},...
-%    'ObsNames',{'UpStep0','UpStep0.25','UpStep0.5','UpStep0.75','UpStep1','UpStep1.25','UpStep1.5','UpStep1.75','UpStep2'});
-
-for i=1:experiment.Nexp
-    clear Msh;
-    v.Reset(MA);
-    Msh = meshdsnp();
-    tic
-    s = MA.Negotiate(Msh);
-    t(i) = toc;
-    disp(['Nexp: ' num2str(i)])
-end
+s.PrivEval
 %    eval(['save output_' experimenttypestr '_' voidness{z} ' output']); 
 
 

@@ -38,10 +38,57 @@ classdef medagent < handle
             end
 
             output.agreement = MA.Msh.currentpoint;
-            output.PubEval = MA.PubEval;
-            output.PrivEval = MA.PrivEval;
-            output.mesh = MA.Msh;
-            output.D = MA.D;
+            output.PubEval = MA.PubEval(1,:);
+            output.PrivEval = MA.PrivEval(1,:);
+            output.D = MA.D(1,MA.Nround);
+            output.sw = sum(output.PrivEval);
+        end
+              
+        function computeGroupPreferences(obj)
+            if obj.Type == 2                    %Yager
+                St = obj.devMax(obj.PubEval); %[0 0.3] Ag1-egoísta Ag2-menos egoísta
+                Sagg = sum(St);
+                if Sagg == 0 %Todos los agentes son egoístas, los pesos wt serán todos 0--> D=0, G=0, sigma=sigmamin
+                    Sagg = 1;
+                end
+                wt = St/Sagg;
+                obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
+                
+            else                                %Sumas de preferencias de cada agente por cada meshpoint
+                obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
+            end
+        end
+        
+        function selectionProcess(obj)
+            Gd = obj.D(:,obj.Nround);
+            G = max(Gd)^2;
+            if obj.Nround<obj.sg(4)
+                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^...
+                    (obj.sg(3)*(1-obj.Nround/obj.MaxRounds));
+            else
+                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^...
+                    (obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))));
+            end
+            P = cumsum(Gd.^sigma/sum(Gd.^sigma));
+            winnercontract = find(not(rand()>=P),1);
+            
+            if winnercontract == 1 %The maximum support is for the current contract
+                obj.Msh.Contract();
+            else
+                obj.Msh.currentpoint = obj.Msh.meshpoints(winnercontract-1,:);
+                obj.Msh.Expand();
+            end
+            obj.Winner = winnercontract;
+        end
+        
+        function dm = devMax(obj, v)
+            [maxv, indv] = max(v);
+            for i=1:length(indv)
+                vp = v(:,i);
+                vp(indv(i)) = [];
+                diff = maxv(i) - vp;
+                dm(i) = 1-sum(diff)/(4*maxv(i));
+            end
         end
         
         function RegisterAgent(MA, A)
@@ -67,40 +114,6 @@ classdef medagent < handle
             while any(obj.ReceptionFlags == 0)              
             end
             obj.ReceptionFlags = zeros(1, obj.Nagents);
-        end
-        
-        function computeGroupPreferences(obj)
-            if obj.Type == 2                    %Yager
-                St = sum(obj.PubEval);          %Vector con sumas de evaluaciones de cada Agente St
-                Sagg = sum(St);                 %Agregación de evaluaciones de todos los Agentes
-                wt = St/Sagg;                   %Vector con pesos por cada Agente
-                
-                obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
-                
-            else                                %Sumas de preferencias de cada agente
-                obj.D(:, obj.Nround) = sum(obj.PubEval,2)/(obj.Nagents);
-            end
-        end
-        
-        function selectionProcess(obj)
-            Gd = obj.D(:,obj.Nround);
-            G = max(Gd);
-            if obj.Nround<obj.sg(4)
-                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^(obj.sg(3)*(1-obj.Nround/obj.MaxRounds));
-            else
-                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^(obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))));
-            end
-            sigma
-            P = cumsum(Gd.^sigma/sum(Gd.^sigma));
-            winnercontract = find(not(rand()>=P),1);
-            
-            if winnercontract == 1 %The maximum support is for the current contract
-                obj.Msh.Contract();
-            else
-                obj.Msh.currentpoint = obj.Msh.meshpoints(winnercontract-1,:);
-                obj.Msh.Expand();
-            end
-            obj.Winner = winnercontract;
         end
     end
           

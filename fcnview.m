@@ -34,7 +34,7 @@ classdef fcnview < handle
             box; grid;
             
             subplot(3,1,3);
-            axis([0 MA.MaxRounds 0 1.5]);
+            axis([0 MA.MaxRounds 0 MA.Nagents]);
             hold on;
             title('Group Preferences', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('Number')
@@ -43,7 +43,8 @@ classdef fcnview < handle
         end
         function listenUpdateGraph(obj, src, evnt)
             mesh = [evnt.AffectedObject.Msh.currentpoint;evnt.AffectedObject.Msh.meshpoints];
-            subplot(3,1,1);
+            h = subplot(3,1,1);
+            cla(h);
             scatter(mesh(:,1), mesh(:,2), '*');
             subplot(3,1,2);
             plot(evnt.AffectedObject.Nround, ...
