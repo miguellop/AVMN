@@ -45,7 +45,8 @@ classdef fcnview < handle
             mesh = [evnt.AffectedObject.Msh.currentpoint;evnt.AffectedObject.Msh.meshpoints];
             h = subplot(3,1,1);
             %cla(h);
-            scatter(mesh(:,1), mesh(:,2), evnt.AffectedObject.Msh.deltam*5+5);
+            colormap('Gray');
+            scatter(mesh(:,1), mesh(:,2), evnt.AffectedObject.Msh.deltam*5+5,[1  1 1 50]);
             subplot(3,1,2);
             plot(evnt.AffectedObject.Nround, ...
                 evnt.AffectedObject.PrivEval(evnt.AffectedObject.Winner,:), 'o', 'MarkerSize', 5);

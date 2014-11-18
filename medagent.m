@@ -45,17 +45,18 @@ classdef medagent < handle
         end
               
         function computeGroupPreferences(obj)
-            if obj.Type == 2                    %Yager
-                St = obj.devMax(obj.PubEval); %[0 0.3] Ag1-egoísta Ag2-menos egoísta
+            %Referencia
+            if obj.Type == 1
+                obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
+            else %Yager
+                St = obj.devMax(obj.PubEval); %[0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
                 Sagg = sum(St);
-                if Sagg == 0 %Todos los agentes son egoístas, los pesos wt serán todos 0--> D=0, G=0, sigma=sigmamin
-                    Sagg = 1;
+                if Sagg == 0 %Todos los agentes son egoístas, los transformamos a cooperativos
+                    St = ones(1,obj.Nagents);
+                    Sagg = obj.Nagents;
                 end
                 wt = St/Sagg;
                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
-                
-            else                                %Sumas de preferencias de cada agente por cada meshpoint
-                obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
             end
         end
         

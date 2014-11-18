@@ -38,14 +38,34 @@ save UFfix UF
 
 % [x.x, x.y]=meshgrid(linspace(0,100,100));
 % [C h]=  contour(x.x,x.y,UF{1}(x,d),5,'LineStyle',':'); clabel(C, h,'manual','fontsize',15);
-
+%%
 figure
+d=[0 0;100 100];
+
 for i=1:4
-    plotSurfs(UF{i});
-    hold on;
+        subplot(2,2,i);
+        fB = UF{i};
+        [xa.x xa.y]=meshgrid(linspace(d(1,1), d(2,1),10));
+        colormap('default')
+        ezmeshc(@(x,y) fB([x y], d), reshape(d, 1, numel(d)));
+        hold on;
 end
 axis auto
+%%
+%BELL fix con dos bells para mostrar como funciona GPS
+centers = [25 75; 25 75]';
 
+w = [100 100];
+
+h = [1,1];
+
+for i=1:2
+    UF{i} = fbellfix(centers(i,:),w(i),h(i), false);
+end
+save UFfixforGPS UF
+
+% [x.x, x.y]=meshgrid(linspace(0,100,100));
+% [C h]=  contour(x.x,x.y,UF{1}(x,d),5,'LineStyle',':'); clabel(C, h,'manual','fontsize',15);
 %%
 %Cálculo de máximos y mínimos del Social Welfare de las funciones de
 %utilidad generadas
