@@ -26,17 +26,17 @@ classdef fcnview < handle
             hold on;
             
             subplot(3,1,2);
-            axis([0 MA.MaxRounds 0 1.1]);
+            axis([0 MA.MaxRounds 0 1]);
             hold on;
-            title('Current Utilities', 'FontSize', 11, 'FontWeight', 'bold')
+            title('Rewards', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('Round Number')
             ylabel('Utility')
             box; grid;
             
             subplot(3,1,3);
-            axis([0 MA.MaxRounds 0 MA.Nagents]);
+            axis([0 MA.MaxRounds 0 1]);
             hold on;
-            title('Group Preferences', 'FontSize', 11, 'FontWeight', 'bold')
+            title('Social Welfare', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('Number')
             ylabel('Group Preference')
             box; grid;
@@ -44,7 +44,7 @@ classdef fcnview < handle
         function listenUpdateGraph(obj, src, evnt)
             mesh = [evnt.AffectedObject.Msh.currentpoint;evnt.AffectedObject.Msh.meshpoints];
             h = subplot(3,1,1);
-            %cla(h);
+            cla(h);
             scatter(mesh(:,1), mesh(:,2), evnt.AffectedObject.Msh.deltam*5+5);
             subplot(3,1,2);
             plot(evnt.AffectedObject.Nround, ...

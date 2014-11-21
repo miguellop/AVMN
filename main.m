@@ -4,22 +4,22 @@
 clear all;
 
 experiment.Nexp = 1;
-experiment.UF = 'UFfixforGPS';
+experiment.UF = 'UFrandom';
 experiment.Domain = [0 0;100 100];
 experiment.Mediator.MaxRounds = 35;
 
 experiment.Mediator.Types = [2 2]; nMdTypes = 1;
                     % 1 - RMd (Reference Mediator)
-                    % 2 - YMd (Yager Mediator)
-experiment.Mediator.Sgm = [200 200 2 200]; nMdSgm = 1;
+                    % 2 - YMd (GPSao Mediator)
+experiment.Mediator.Sgm = [0 200 2 200]; nMdSgm = 1;
                     % Sgm(1,:)=>(sgmy)
                     
-experiment.Agent.Types = [1 1;...
+experiment.Agent.Types = [2 2 2 1;...
                         %  2 1 1 1;...
                         %  2 2 1 1;...
                         %  2 2 2 1;...
                         %  2 2 2 2;...                            
-                            ]; 
+                            ];
                         nAgTypes = size(experiment.Agent.Types,1); 
                         nAgs = size(experiment.Agent.Types,2);
                     % 1 - CAg (Cooperative)
@@ -64,8 +64,8 @@ for imdtype=1:nMdTypes
     %end
 end
 % Para calcular intervalos de confianza ttest
-%%
-load experiments
+
+%load experiments
 
 for imdtype=1:nMdTypes
     %for imdsgm=1:nMdSgm
@@ -80,6 +80,7 @@ for imdtype=1:nMdTypes
         end
     %end
 end
+e
 %%
 [p,table,stats]=anova1(e(1,5).peval,{'Ag1','Ag2','Ag3','Ag4'},'on')
 %%

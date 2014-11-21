@@ -48,7 +48,7 @@ classdef medagent < handle
             %Referencia
             if obj.Type == 1
                 obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
-            else %Yager
+            elseif obj.Type == 2 %GPSao
                 St = obj.devMax(obj.PubEval); %[0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
                 Sagg = sum(St);
                 if Sagg == 0 %Todos los agentes son egoístas, los transformamos a cooperativos
@@ -57,6 +57,8 @@ classdef medagent < handle
                 end
                 wt = St/Sagg;
                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
+            else % Yager
+                
             end
         end
         
