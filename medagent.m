@@ -13,6 +13,7 @@ classdef medagent < handle
                  
         D
         sg
+        sigma
     end
     
     properties (SetObservable = true)
@@ -55,25 +56,49 @@ classdef medagent < handle
                     St = ones(1,obj.Nagents);
                     Sagg = obj.Nagents;
                 end
+                
+%                 if obj.Msh.deltam>=50
+%                     wt = [0.25 0.25 0.25 0.25]
+%                 else
+                    wt = St/Sagg;
+%                 end
+                obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
+                %obj.PrivEval(obj.Winner,:)
+            else % Yager
+                St = sum(obj.PubEval);
+                Sagg = sum(St);
+                if Sagg == 0
+                    St = ones(1,obj.Nagents);
+                    Sagg = obj.Nagents;
+                end
                 wt = St/Sagg;
                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
-            else % Yager
-                
             end
         end
         
         function selectionProcess(obj)
-            Gd = obj.D(:,obj.Nround);
-            G = max(Gd)^2;
+            cp = obj.Msh.currentpoint;
+            mp = obj.Msh.meshpoints;
+            ap = [cp;mp];
+            % Puntos de la malla dentro del dominio
+            validPoints = not(sum(ap<0 | ap>100, 2));
+            % Índices de la malla dentro del dominio
+            validIndexes = find(validPoints);
+            
+            Gd = obj.D(validIndexes,obj.Nround);
+            G = max(Gd);
+
             if obj.Nround<obj.sg(4)
-                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^...
+                obj.sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^...
                     (obj.sg(3)*(1-obj.Nround/obj.MaxRounds));
             else
-                sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^...
+                obj.sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*G^...
                     (obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))));
             end
-            P = cumsum(Gd.^sigma/sum(Gd.^sigma));
-            winnercontract = find(not(rand()>=P),1);
+            P = cumsum(Gd.^obj.sigma/sum(Gd.^obj.sigma));
+            winnercontract = validIndexes(find(not(rand()>=P),1));
+            
+            %Si el winner está fuera del dominio, se selecciona otro punto
             
             if winnercontract == 1 %The maximum support is for the current contract
                 obj.Msh.Contract();

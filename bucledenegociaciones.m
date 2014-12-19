@@ -1,3 +1,0 @@
-%%
-experimenttypestr = 'random';
-negoDSNPc

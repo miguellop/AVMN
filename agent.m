@@ -14,38 +14,42 @@ classdef agent < handle
         end
         %% RESPONSE STRATEGY
         function ResponseStrategy(A, src, evnt)
-            priveval = A.UF([evnt.mesh.currentpoint; evnt.mesh.meshpoints], evnt.mesh.domain);
+            priveval = A.UF([evnt.mesh.currentpoint(1); evnt.mesh.meshpoints(:,1)],...
+                [evnt.mesh.currentpoint(2); evnt.mesh.meshpoints(:,2)]);
             [maxpriveval, indmaxpriveval] = max(priveval);
             %CAg
-            if A.Type == 1      
-                if maxpriveval == 0
-                    pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
-                else
+             if A.Type == 1      
+%                 if maxpriveval == 0
+%                     %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
+%                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
+%                 else
                     pubeval = priveval;
-                end
+%                end
             %SAg
             elseif A.Type == 2  
-                if maxpriveval == 0
-                    pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
-                else
+%                 if maxpriveval == 0
+%                     %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
+%                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
+%                     pubeval = [0.1 0.1 0.1 0 0];
+%                 else
                     pubeval = zeros(evnt.mesh.npoints+1, 1);
                     pubeval(indmaxpriveval) = maxpriveval;
-                end
+%                 end
             %eCAg
             elseif A.Type ==3
-                if maxpriveval == 0
-                    pubeval = 1*ones(evnt.mesh.npoints+1,1);
-                else
+%                 if maxpriveval == 0
+%                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
+%                 else
                     pubeval = priveval/maxpriveval;
-                end
+%                 end
             %eSAg
             else
-                if maxpriveval == 0
-                    pubeval = 1*ones(evnt.mesh.npoints+1,1);
-                else
+%                 if maxpriveval == 0
+%                     pubeval = rand(evnt.mesh.npoints+1,1)/4;
+%                 else
                     pubeval = zeros(evnt.mesh.npoints+1, 1);
                     pubeval(indmaxpriveval) = 1;
-                end
+%                 end
             end
             
             src.AddMeshEval(A.AgentIndex, pubeval, priveval);

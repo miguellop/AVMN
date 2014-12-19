@@ -13,19 +13,19 @@ classdef fcnview < handle
         function Reset(obj, MA)
             clf;
             colormap('Gray');
-            subplot(3,1,1);
+            subplot(2,2,1);
             axis([0 100 0 100]);
             title('Negotiation Space: (x1, x2)', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('x1')
             ylabel('x2')
             hold on;
             for i=1:obj.Nagents
-                ezcontour(@(x,y) obj.Ag{i}.UF([x y], [0 0;100 100]), [0 100 0 100]);
+                ezcontour(@(x,y) obj.Ag{i}.UF(x,y), [0 100 0 100]);
             end
             box; 
             hold on;
             
-            subplot(3,1,2);
+            subplot(2,2,2);
             axis([0 MA.MaxRounds 0 1]);
             hold on;
             title('Rewards', 'FontSize', 11, 'FontWeight', 'bold')
@@ -33,25 +33,36 @@ classdef fcnview < handle
             ylabel('Utility')
             box; grid;
             
-            subplot(3,1,3);
+            subplot(2,2,3);
             axis([0 MA.MaxRounds 0 1]);
             hold on;
             title('Social Welfare', 'FontSize', 11, 'FontWeight', 'bold')
             xlabel('Number')
             ylabel('Group Preference')
             box; grid;
+            
+            subplot(2,2,4);
+            axis([0 MA.MaxRounds 0 200]);
+            hold on;
+            title('Sigma-Deterministic', 'FontSize', 11, 'FontWeight', 'bold')
+            xlabel('Number')
+            ylabel('Sigma')
+            box; grid;
         end
         function listenUpdateGraph(obj, src, evnt)
             mesh = [evnt.AffectedObject.Msh.currentpoint;evnt.AffectedObject.Msh.meshpoints];
-            h = subplot(3,1,1);
+            h = subplot(2,2,1);
             cla(h);
             scatter(mesh(:,1), mesh(:,2), evnt.AffectedObject.Msh.deltam*5+5);
-            subplot(3,1,2);
+            subplot(2,2,2);
             plot(evnt.AffectedObject.Nround, ...
                 evnt.AffectedObject.PrivEval(evnt.AffectedObject.Winner,:), 'o', 'MarkerSize', 5);
-            subplot(3,1,3);
+            subplot(2,2,3);
             plot(evnt.AffectedObject.Nround, ...
                 evnt.AffectedObject.D(:, evnt.AffectedObject.Nround), 'o', 'MarkerSize', 5); 
+            subplot(2,2,4);
+            plot(evnt.AffectedObject.Nround, ...
+                evnt.AffectedObject.sigma, 'o', 'MarkerSize', 5); 
 
             drawnow();
         end
