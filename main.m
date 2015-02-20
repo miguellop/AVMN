@@ -2,61 +2,65 @@
 % Main
 %%%%%%%%%
 clear all;
-
-experiment.NexpA = 5; %Número de experimentos con diferentes función de utilidad
-experiment.NexpB = 100; %Número de experimentos con cada función de utilidad
+% He fabricado experimentos con NexpA = 1 ó 5, y NexpB = 50, (10, 40) ...
+experiment.NexpA = 5; %Número de diferentes sets de funciones de utilidad
+experiment.NexpB = 40; %Número de experimentos con cada función de utilidad
 experiment.UF = 'UFrandomHard';
 experiment.Domain = [0 0;100 100];
-experiment.Mediator.MaxRounds = 100;
+experiment.Mediator.MaxRounds = 50;
 
 experiment.draw = false;
 
 experiment.Mediator.Types = [1 2 3]; 
 nMdTypes = length(experiment.Mediator.Types);
-                    % 1 - RMd (Reference Mediator)
-                    % 2 - GMd (GPSao Mediator)
-                    % 3 - YMd (Yager Mediator)
-experiment.Mediator.Sgm = [100 100 4 100;0 100 4 100]; 
-%experiment.Mediator.Sgm = [0 100 4 100]; 
+
+                    % 1 - NSao 
+                    % 2 - YAo 
+                    % 3 - DSao
+                    
+experiment.Mediator.Sgm = [0 100 4 100]; 
 nMdSgm = size(experiment.Mediator.Sgm,1);
                     % Sgm(1,:)=>(sgmy)
                     
 experiment.Agent.Types = [1 1 1 1;...
-                          2 1 1 1;...
+%                          2 1 1 1;...
                           2 2 1 1;...
-                          2 2 2 1;...
-                          2 2 2 2;...
+%                          2 2 2 1;...
+%                          2 2 2 2;...
                             
-                          3 3 3 3;...
-                          4 4 4 4;...
+                         3 3 3 3;...
+%                          4 4 4 4;...
+%                           
+%                          4 4 3 3;...
+%                             
+%                           4 1 1 1;...
+%                          4 4 1 1;...
+%                           4 4 4 1;...
+%                           
+%                           4 2 2 2;...
+%                          4 4 2 2;...
+%                           4 4 4 2;...
                           
-                          4 4 3 3;...
-                            
-                          4 1 1 1;...
-                          4 4 1 1;...
-                          4 4 4 1;...
-                          
-                          4 2 2 2;...
-                          4 4 2 2;...
-                          4 4 4 2;...
-                          
-                          3 1 1 1;...
+%                           3 1 1 1;...
                           3 3 1 1;...
-                          3 3 3 1;...
-                          
-                          3 2 2 2;...
-                          3 3 2 2;...
-                          3 3 3 2;
+%                           3 3 3 1;...
+%                           
+%                           3 2 2 2;...
+%                          3 3 2 2;...
+%                           3 3 3 2;
+                          5 5 5 5;...
+                          6 6 6 6;...
                             ]; 
-                        nAgTypes = size(experiment.Agent.Types,1); 
-                        nAgs = size(experiment.Agent.Types,2);
-                    % 1 - CAg (Cooperative)
-                    % 2 - SAg (Selfish)
-                    % 3 - eCAg (Exagerate Cooperative)
-                    % 4 - eSAg (Exagerate Selfish)
-%%                             
-load (experiment.UF); 
+                        nAgTypes =  size(experiment.Agent.Types,1); 
+                        nAgs     =  size(experiment.Agent.Types,2);
+% 1 - CAg (Cooperative) 0.5 0.2 0.4 0.5 0.1
+% 2 - SAg (Selfish) 0.5 0 0 0 0
+% 3 - eCAg (Exagerate Cooperative) 1 0.6 0.4 0.3 0.1
+% 4 - eSAg (Exagerate Selfish) 1 0 0 0 0
 
+%% NEGOCIACIÓN                           
+load (experiment.UF); 
+fname = [datestr(clock) '_test_' experiment.UF]; 
 sol = cell(nMdTypes, nMdSgm, nAgTypes, experiment.NexpA, experiment.NexpB);
 for imdtype=1:nMdTypes
     for imdsgm=1:nMdSgm
@@ -89,7 +93,7 @@ for imdtype=1:nMdTypes
                     disp(['Mediator: ' num2str(imdtype) ' Sigma: ' num2str(imdsgm-1) ' Ag: ' ...
                         num2str(experiment.Agent.Types(iagtype,:)) ' Exp: ' num2str(k) '-' num2str(i)]);
                 end
-                fname = [date '_test_' experiment.UF]; 
+                
                 save(fname, 'sol');
             end
         end
@@ -97,11 +101,10 @@ for imdtype=1:nMdTypes
 end
 % Para calcular intervalos de confianza ttest o normfit
 
-%%
+%% GENERATE PRIVEVAL, SOCIAL WELFARE and NASH PRODUCT
 
-%load 10-Dec-2014_test_UFfix
-%load 10-Dec-2014_test_UFfix
-load 11-Dec-2014_test_UFrandom
+%load 19-Feb-2015_test_UFrandom
+
 
 for imdtype=1:nMdTypes
     for imdsgm=1:nMdSgm
@@ -112,34 +115,40 @@ for imdtype=1:nMdTypes
                     priveval(z,:) = sol{imdtype, imdsgm, iagtype, k, i}.PrivEval;
                     z=z+1;
                 end
-                e(imdtype,imdsgm,iagtype).peval = priveval;
-                e(imdtype,imdsgm,iagtype).ev = mean(priveval);
-                e(imdtype,imdsgm,iagtype).sw = mean(sum(priveval,2));
             end
+            e(imdtype,imdsgm,iagtype).peval = priveval;
+            e(imdtype,imdsgm,iagtype).sw = sum(priveval,2);     % SOCIAL WELFARE
+            e(imdtype,imdsgm,iagtype).np = prod(priveval,2);    % NASH PRODUCT
         end
     end
 end
-
+%% HISTOGRAMAS 3D DE UTILIDADES DE AGENTES
 figure
 z=1;
-sets = [1:5 6];
-x = 0:0.25:1;
+sets = [1:2];
+x = 0:0.2:1;
+sz = length(sets)*3;
+p = 1:sz; %orden de plots
+p = reshape(reshape(p,3,length(sets))',1,sz);
 
+
+% Plot de bar3 de utilidades de los 4 agentes
 for i=1:3 % (1)-Sum operator (2)-GPS operator (3)-Yager operator
-    for j=2:2 % (1)-Sgm off (2)-Sgm on
+    for j=1:1 % (1)-Sgm off (2)-Sgm on
         for k=sets                 
-            subplot(3,length(sets),z);
+            subplot(length(sets),3,p(z));
             z=z+1;
             bincounts = zeros(length(x),4);
             for ag=1:4  % (1) Ag1 (2) Ag2 (3) Ag3 (4) Ag4              
                 bincounts(:,ag) = histc(e(i,j,k).peval(:,ag),x);
             end
             %bincounts = log10(bincounts);       
-            colors = {[0.8 0.8 0.8],[0.4 0.4 0.4],[0.8 0.8 0.8],[0.4 0.4 0.4],};
+            colors = {[0.8 0.8 0.8],[0.4 0.4 0.4],...
+                [0.8 0.8 0.8],[0.4 0.4 0.4],[0.8 0.8 0.8],[0.8 0.8 0.8]};
             
             h = bar3(x,bincounts);
             ylim([0 1]);
-            zlim([0 400]);
+            zlim([0 200]);
             for c = 1:4
                 set(h(c),'FaceColor',colors{experiment.Agent.Types(k,c)});  
             end
@@ -147,8 +156,64 @@ for i=1:3 % (1)-Sum operator (2)-GPS operator (3)-Yager operator
     end
 end
 
-%% Histfit
-sets = [1:20];
+%% PLOTCDF REWARDS
+% 'red','yellow' NSao 
+% 'green','cyan' YAo 
+% 'blue','black' DSao 
+LineStyle = {'-',':','--','-.'};
+MarkerStyle = {'.','o','^','s'};
+colors = {'red','green','blue','yellow','cyan','black'};
+profile = [1 2];
+
+for i=1:3 % (1)-NSao (2)-YAo (3)-DSao
+    for pf = 1:length(profile)
+        pl = e(i,1,profile(pf)).peval(:,1:2);
+        pl = reshape(pl,1,numel(pl)); 
+
+        hc = cdfplot(pl);
+        xlim([0 1.1]);
+        set(hc,'color',colors{i},'LineStyle',LineStyle{pf});
+        hold on;   
+    end
+end
+%% PLOTCDF SW
+% 'red','yellow' NSao 
+% 'green','cyan' YAo 
+% 'blue','black' DSao 
+
+LineStyle = {':','--','-','-.',':'};
+MarkerStyle = {'.','o','^','s'};
+colors = {'red','green','blue','yellow','cyan','black'};
+profile = [1 2 3];
+
+for i=1:3 % (1)-NSao (2)-YAo (3)-DSao
+    for pf = 1:length(profile)
+        pl = e(i,1,profile(pf)).sw;
+        pl = reshape(pl,1,numel(pl)); 
+        [hc,st(i,pf)] = cdfplot(pl);
+        set(hc,'color',colors{i},'LineStyle',LineStyle{pf});
+        hold on;  
+    end
+
+end
+%% PLOT BAR3
+
+% z=1;
+% % Plot de bar3 de utilidades de los 4 agentes
+% for i=1:3 % (1)-Sum operator (2)-GPS operator (3)-Yager operator
+%     for j=1:1 % (1)-Sgm off (2)-Sgm on
+%         for k=sets                 
+%             subplot(3,length(sets),z);
+%             z=z+1;
+%             bincounts = histc(e(i,j,k).sw,x);
+%             colors = {[0.8 0.8 0.8],[0.4 0.4 0.4],[0.8 0.8 0.8],[0.4 0.4 0.4],};
+%             
+%             h = bar(x,bincounts);
+%         end
+%     end
+% end
+%% HISTFIT
+sets = [1 6 7];
 LineStyle = {'-','--',':','-.'};
 MarkerStyle = {'.','o','^','s'};
 ColorStyle = {'black','red','green','blue'};
@@ -183,7 +248,7 @@ end
 %% ANOVA
 [p,table,stats]=anova1(e(1,5).peval,{'Ag1','Ag2','Ag3','Ag4'},'on')
 
-%% MEDIAN
+%% STATISTICS
 z=0;
 for i=1:3
     for k=1:20

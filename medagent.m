@@ -46,10 +46,10 @@ classdef medagent < handle
         end
               
         function computeGroupPreferences(obj)
-            %Referencia
+            %NSao
             if obj.Type == 1
                 obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
-            elseif obj.Type == 2 %GPSao
+            elseif obj.Type == 3 %GPSao
                 St = obj.devMax(obj.PubEval); %[0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
                 Sagg = sum(St);
                 if Sagg == 0 %Todos los agentes son egoístas, los transformamos a cooperativos

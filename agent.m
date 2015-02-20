@@ -17,8 +17,9 @@ classdef agent < handle
             priveval = A.UF([evnt.mesh.currentpoint(1); evnt.mesh.meshpoints(:,1)],...
                 [evnt.mesh.currentpoint(2); evnt.mesh.meshpoints(:,2)]);
             [maxpriveval, indmaxpriveval] = max(priveval);
+            [ordpriveval, indpriveval] = sort(priveval,'descend');
             %CAg
-             if A.Type == 1      
+            if A.Type == 1      
 %                 if maxpriveval == 0
 %                     %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
 %                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
@@ -36,20 +37,41 @@ classdef agent < handle
                     pubeval(indmaxpriveval) = maxpriveval;
 %                 end
             %eCAg
-            elseif A.Type ==3
+            elseif A.Type == 3
 %                 if maxpriveval == 0
 %                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
 %                 else
                     pubeval = priveval/maxpriveval;
 %                 end
             %eSAg
-            else
+            elseif A.Type == 4
 %                 if maxpriveval == 0
 %                     pubeval = rand(evnt.mesh.npoints+1,1)/4;
 %                 else
                     pubeval = zeros(evnt.mesh.npoints+1, 1);
                     pubeval(indmaxpriveval) = 1;
 %                 end
+            %Lang-Fink: Se divide la negociación en etapas. La primera
+            %etapa obliga a votar con 1 por ncontracts - 1, la segunda por
+            %ncontracts -2 y la última por 1 contrato sólo
+            elseif A.Type == 5 
+                pubeval = zeros(evnt.mesh.npoints+1, 1);
+                if src.Nround <20
+                    pubeval(indpriveval(1:3)) = 1; 
+                elseif src.Nround < 35
+                    pubeval(indpriveval(1:2)) = 1;
+                else
+                    pubeval(indpriveval(1)) = 1; 
+                end
+            else 
+                pubeval = zeros(evnt.mesh.npoints+1, 1);
+                if src.Msh.deltam > 15
+                    pubeval(indpriveval(1:3)) = 1; 
+                elseif src.Msh.deltam > 5
+                    pubeval(indpriveval(1:2)) = 1;
+                else
+                    pubeval(indpriveval(1)) = 1; 
+                end
             end
             
             src.AddMeshEval(A.AgentIndex, pubeval, priveval);
