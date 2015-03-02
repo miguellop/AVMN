@@ -115,7 +115,7 @@ classdef medagent < handle
                 vp = v(:,i);
                 vp(indv(i)) = [];
                 diff = maxv(i) - vp;
-                dm(i) = 1-sum(diff)/(4*maxv(i));
+                dm(i) = 1-sum(diff)/(obj.Msh.npoints*maxv(i));
             end
         end
         

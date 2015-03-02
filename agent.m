@@ -14,8 +14,7 @@ classdef agent < handle
         end
         %% RESPONSE STRATEGY
         function ResponseStrategy(A, src, evnt)
-            priveval = A.UF([evnt.mesh.currentpoint(1); evnt.mesh.meshpoints(:,1)],...
-                [evnt.mesh.currentpoint(2); evnt.mesh.meshpoints(:,2)]);
+            priveval = A.UF([evnt.mesh.currentpoint; evnt.mesh.meshpoints]);
             [maxpriveval, indmaxpriveval] = max(priveval);
             [ordpriveval, indpriveval] = sort(priveval,'descend');
             %CAg

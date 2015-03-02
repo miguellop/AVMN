@@ -55,26 +55,27 @@ axis auto
 
 %% BELLs Random (UFrandom)
 
-ni = 2; %nissues
-na = 4; %nagents
+ni = 8; %nissues
+na = 1; %nagents
+ns = 1; %número de sets
 d=[zeros(1,ni);100*ones(1,ni)];
-for k=1:1
+for k=1:ns
     for index = 1:na
         p = [0.01 0.5];% p fija la complejidad de las bells
         r = @(d,n)  (d*(100^n)*gamma(n/2+1)/pi^(n/2))^(1/n);
-        uf{k}{index} = fbell(30, ni,[r(p(1),ni) r(p(2),ni)],[0.1 1],true);
+        uf{k}{index} = fbell(300, ni,[r(p(1),ni) r(p(2),ni)],[0.1 1],true);
     end
 end
 
-clf
-colormap('default')
-for i=1:4
-        subplot(2,2,i);
-        ezmeshc(@(x,y) uf{1}{i}(x,y), reshape(d, 1, numel(d)));
-        hold on;
-end
-axis auto
-%save UFrandom uf
+% clf
+% colormap('default')
+% for i=1:4
+%         subplot(2,2,i);
+%         ezmeshc(@(x,y) uf{1}{i}(x,y), reshape(d, 1, numel(d)));
+%         hold on;
+% end
+% axis auto
+%save UFrandom8agents8issues uf
 
 %% BELLs Random (UFrandom) VERSIÓN HARD
 

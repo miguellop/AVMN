@@ -17,22 +17,24 @@ function [f ] = fbell(np, ni, r, h, norm)
     end
 end
 
-function z = funcion_bell (x, npeaks, c, r, h, nor, m)
+function z = funcion_bell (x, npeaks, c, r, h, norm, m)
     npoints = size(x,1);
     z = zeros(1,npoints);
-    for j=1:npoints
-        for i=1:npeaks
+    
+    for i=1:npeaks
+        for j=1:npoints
             dist = norm(x(j,:)-c(i,:));
-            ind = dist<(r(i)./2);
-            z(ind) = z(ind)+h(i)-2*h(i)*dist(ind).^2./r(i).^2;
-            ind = dist>=(r(i)./2) & dist<r(i);
-            z(ind) = z(ind)+(2.*h(i)./r(i).^2).*(dist(ind)-r(i)).^2;
         end
+        ind = dist<(r(i)./2);
+        z(ind) = z(ind)+h(i)-2*h(i)*dist(ind).^2./r(i).^2;
+        ind = dist>=(r(i)./2) & dist<r(i);
+        z(ind) = z(ind)+(2.*h(i)./r(i).^2).*(dist(ind)-r(i)).^2;
     end
-    if nor
+    
+    if norm
         z = z./m;
     end
     
-    z(not(prod(x>=0 & x<=100,2))) = 0;
+    z(sum(x<0 | x>100,1)) = 0;
     
 end

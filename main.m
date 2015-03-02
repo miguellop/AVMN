@@ -3,10 +3,11 @@
 %%%%%%%%%
 clear all;
 % He fabricado experimentos con NexpA = 1 ó 5, y NexpB = 50, (10, 40) ...
-experiment.NexpA = 5; %Número de diferentes sets de funciones de utilidad
+experiment.NexpA = 1; %Número de diferentes sets de funciones de utilidad
 experiment.NexpB = 40; %Número de experimentos con cada función de utilidad
-experiment.UF = 'UFrandomHard';
-experiment.Domain = [0 0;100 100];
+experiment.UF = 'UFrandom8agents8issues';
+experiment.nissues = 8;
+experiment.Domain = [zeros(1,experiment.nissues);ones(1,experiment.nissues)*100];
 experiment.Mediator.MaxRounds = 50;
 
 experiment.draw = false;
@@ -22,13 +23,13 @@ experiment.Mediator.Sgm = [0 100 4 100];
 nMdSgm = size(experiment.Mediator.Sgm,1);
                     % Sgm(1,:)=>(sgmy)
                     
-experiment.Agent.Types = [1 1 1 1;...
+experiment.Agent.Types = [1 1 1 1 1 1 1 1;...
 %                          2 1 1 1;...
-                          2 2 1 1;...
+                          2 2 2 2 1 1 1 1;...
 %                          2 2 2 1;...
-%                          2 2 2 2;...
+                          2 2 2 2 2 2 2 2;...
                             
-                         3 3 3 3;...
+%                         3 3 3 3;...
 %                          4 4 4 4;...
 %                           
 %                          4 4 3 3;...
@@ -42,14 +43,14 @@ experiment.Agent.Types = [1 1 1 1;...
 %                           4 4 4 2;...
                           
 %                           3 1 1 1;...
-                          3 3 1 1;...
+%                          3 3 1 1;...
 %                           3 3 3 1;...
 %                           
 %                           3 2 2 2;...
 %                          3 3 2 2;...
 %                           3 3 3 2;
-                          5 5 5 5;...
-                          6 6 6 6;...
+%                          5 5 5 5;...
+%                          6 6 6 6;...
                             ]; 
                         nAgTypes =  size(experiment.Agent.Types,1); 
                         nAgs     =  size(experiment.Agent.Types,2);
@@ -84,12 +85,13 @@ for imdtype=1:nMdTypes
                     if experiment.draw
                         v.Reset(MA);
                     end
-                    Msh = meshdsnp();
+                    Msh = meshdsnp(experiment.nissues,...
+                        100*rand(1,experiment.nissues),...
+                        experiment.Domain, 10, 2, 0.5, 'GPS2N');
                     tic
                     sol{imdtype, imdsgm, iagtype, k, i} = MA.Negotiate(Msh);
                     sol{imdtype, imdsgm, iagtype, k, i}.t = toc;
                     
-
                     disp(['Mediator: ' num2str(imdtype) ' Sigma: ' num2str(imdsgm-1) ' Ag: ' ...
                         num2str(experiment.Agent.Types(iagtype,:)) ' Exp: ' num2str(k) '-' num2str(i)]);
                 end
@@ -124,8 +126,9 @@ for imdtype=1:nMdTypes
 end
 %% HISTOGRAMAS 3D DE UTILIDADES DE AGENTES
 figure
+nagents = 8;
 z=1;
-sets = [1:2];
+sets = [1:3];
 x = 0:0.2:1;
 sz = length(sets)*3;
 p = 1:sz; %orden de plots
@@ -139,7 +142,7 @@ for i=1:3 % (1)-Sum operator (2)-GPS operator (3)-Yager operator
             subplot(length(sets),3,p(z));
             z=z+1;
             bincounts = zeros(length(x),4);
-            for ag=1:4  % (1) Ag1 (2) Ag2 (3) Ag3 (4) Ag4              
+            for ag=1:nagents  % (1) Ag1 (2) Ag2 (3) Ag3 (4) Ag4              
                 bincounts(:,ag) = histc(e(i,j,k).peval(:,ag),x);
             end
             %bincounts = log10(bincounts);       
@@ -149,7 +152,7 @@ for i=1:3 % (1)-Sum operator (2)-GPS operator (3)-Yager operator
             h = bar3(x,bincounts);
             ylim([0 1]);
             zlim([0 200]);
-            for c = 1:4
+            for c = 1:nagents
                 set(h(c),'FaceColor',colors{experiment.Agent.Types(k,c)});  
             end
         end
