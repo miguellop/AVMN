@@ -20,7 +20,7 @@ classdef fcnview < handle
             ylabel('x2')
             hold on;
             for i=1:obj.Nagents
-                ezcontour(@(x,y) obj.Ag{i}.UF(x,y), [0 100 0 100]);
+                ezcontour(@(x,y) obj.Ag{i}.UF([x y]), [0 100 0 100]);
             end
             box; 
             hold on;

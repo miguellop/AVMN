@@ -23,7 +23,8 @@ function y = funcion_bell (x, npeaks, c, r, h, nor, m)
     for j=1:npoints
         z = 0;
         for i=1:npeaks
-            dist = norm(x(j,:)-c(i,:));
+            %dist = norm(x(j,:)-c(i,:));
+            dist = sqrt(sum((x(j,:)-c(i,:)).^2));
             ind = dist<(r(i)./2);
             z(ind) = z(ind)+h(i)-2*h(i)*dist(ind).^2./r(i).^2;
             ind = dist>=(r(i)./2) & dist<r(i);

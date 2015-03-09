@@ -79,14 +79,14 @@ save UFrandom8agents8issues uf
 
 %% BELLs Random (UFrandom) VERSIÓN SOFT
 
-ni = 4; %nissues
+ni = 8; %nissues
 na = 4; %nagents
 d=[zeros(1,ni);100*ones(1,ni)];
 for k=1:5
     for index = 1:na
         p = [0.01 0.5];% p fija la complejidad de las bells
         r = @(d,n)  (d*(100^n)*gamma(n/2+1)/pi^(n/2))^(1/n);
-        uf{k}{index} = fbell(60, ni,[r(p(1),ni) r(p(2),ni)],[0.1 1],true);
+        uf{k}{index} = fbell(100, ni,[r(p(1),ni) r(p(2),ni)],[0.1 1],true);
     end
 end
 
@@ -98,4 +98,4 @@ end
 %         hold on;
 % end
 % axis auto
-save UFrandom4agents4issues uf
+save UFrandomSoft4agents8issues uf
