@@ -19,22 +19,21 @@ classdef agent < handle
             [ordpriveval, indpriveval] = sort(priveval,'descend');
             %CAg
             if A.Type == 1      
-%                 if maxpriveval == 0
-%                     %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
-%                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
-%                 else
+                if maxpriveval == 0
+                    %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
+                    pubeval = rand(evnt.mesh.npoints+1,1)*0.01;
+                else
                     pubeval = priveval;
-%                end
+               end
             %SAg
             elseif A.Type == 2  
-%                 if maxpriveval == 0
-%                     %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
-%                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
-%                     pubeval = [0.1 0.1 0.1 0 0];
-%                 else
+                if maxpriveval == 0
+                    %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
+                    pubeval = rand(evnt.mesh.npoints+1,1)*0.01;
+                else
                     pubeval = zeros(evnt.mesh.npoints+1, 1);
                     pubeval(indmaxpriveval) = maxpriveval;
-%                 end
+                end
             %eCAg
             elseif A.Type == 3
 %                 if maxpriveval == 0

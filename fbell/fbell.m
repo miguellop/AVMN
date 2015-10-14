@@ -35,8 +35,7 @@ function y = funcion_bell (x, npeaks, c, r, h, nor, m)
         end
         y(j) = z;
     end
-    
-    
+     
     y(not(prod(x>=0 & x<=100,2))) = 0;
     
 end

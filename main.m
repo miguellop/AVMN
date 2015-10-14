@@ -3,85 +3,44 @@
 %%%%%%%%%
 clear all;
 % He fabricado experimentos con NexpA = 1 ó 5, y NexpB = 50, (10, 40) ...
-experiment.NexpA = 4; %Número de diferentes sets de funciones de utilidad
-experiment.NexpB = 25; %Número de experimentos con cada función de utilidad
-experiment.UF = 'UFrandom8agents8issues';
-experiment.nissues = 8;
-experiment.nagents = 8;
-experiment.Domain = [zeros(1,experiment.nissues);ones(1,experiment.nissues)*100];
-experiment.Mediator.MaxRounds = 50;
+experiment.NexpA = 1; %Número de diferentes sets de funciones de utilidad
+experiment.NexpB = 1; %Número de experimentos con cada función de utilidad
+experiment.UF = 'UFBeta';
+experiment.nissues = 2;
+experiment.nagents = 2;
+experiment.Domain = [zeros(1,experiment.nissues);ones(1,experiment.nissues)];
+experiment.Mediator.MaxRounds = 100;
 
-experiment.draw = false;
+experiment.draw = true;
 
-experiment.Mediator.Types = [1 2 3]; 
+experiment.Mediator.Types = [3]; 
 nMdTypes = length(experiment.Mediator.Types);
 
                     % 1 - NSao 
                     % 2 - YAo 
                     % 3 - DSao
                     
-experiment.Mediator.Sgm = [0 100 4 100]; 
+experiment.Mediator.Sgm = [1000 1000 2 1010]; 
 nMdSgm = size(experiment.Mediator.Sgm,1);
                     % Sgm(1,:)=>(sgmy)
-          
-if experiment.nagents == 8                  
-experiment.Agent.Types = [1 1 1 1 1 1 1 1;...
-                          2 1 1 1 1 1 1 1;...
-                          2 2 2 2 1 1 1 1;...
-                          2 2 2 2 2 2 2 1;...
-                          2 2 2 2 2 2 2 2;...
-                            
-                          3 3 3 3 3 3 3 3;...
-                          4 4 4 4 4 4 4 4;...
-                           
-                          4 4 4 4 3 3 3 3;...
-                             
-                          4 4 4 4 1 1 1 1;...
-                         
-                          4 4 4 4 2 2 2 2;...
-                          
-                          3 3 3 3 1 1 1 1;...
-                           
-                          3 3 3 3 2 2 2 2;...
 
-                          5 5 5 5 5 5 5 5;...
-                          6 6 6 6 6 6 6 6;...
-                            ]; 
+experiment.Agent.Types = [1 1];   
+nAgTypes =  size(experiment.Agent.Types,1); 
+nAgs     =  size(experiment.Agent.Types,2);
 
-else
-
-experiment.Agent.Types = [1 1 1 1;...
-                          2 1 1 1;...
-                          2 2 1 1;...
-                          2 2 2 1;...
-                          2 2 2 2;...
-                            
-                          3 3 3 3;...
-                          4 4 4 4;...
-                           
-                          4 4 3 3;...
-                             
-                          4 4 1 1;...
-                         
-                          4 4 2 2;...
-                          
-                          3 3 1 1;...
-                           
-                          3 3 2 2;...
-
-                          5 5 5 5;...
-                          6 6 6 6;...
-                            ]; 
-end
-                        nAgTypes =  size(experiment.Agent.Types,1); 
-                        nAgs     =  size(experiment.Agent.Types,2);
 % 1 - CAg (Cooperative) 0.5 0.2 0.4 0.5 0.1
 % 2 - SAg (Selfish) 0.5 0 0 0 0
 % 3 - eCAg (Exagerate Cooperative) 1 0.6 0.4 0.3 0.1
 % 4 - eSAg (Exagerate Selfish) 1 0 0 0 0
 
-%% NEGOCIACIÓN                           
-load (experiment.UF); 
+% NEGOCIACIÓN                           
+load (experiment.UF);
+
+uf{1}{1} = fro; % Agente 1
+uf{1}{2} = fro; % Agente 2
+uf{1}{3} = fbo; % Agente 3
+uf{1}{4} = fuo; % Agente 4
+
 fname = [datestr(clock) '_test_' experiment.UF]; 
 sol = cell(nMdTypes, nMdSgm, nAgTypes, experiment.NexpA, experiment.NexpB);
 for imdtype=1:nMdTypes
@@ -89,7 +48,6 @@ for imdtype=1:nMdTypes
         for iagtype=1:nAgTypes
             for k=1:experiment.NexpA
                 UF = uf{k};
-                
                 clear MA;
                 MA = medagent();
                 MA.MaxRounds = experiment.Mediator.MaxRounds;
@@ -107,8 +65,8 @@ for imdtype=1:nMdTypes
                         v.Reset(MA);
                     end
                     Msh = meshdsnp(experiment.nissues,...
-                        100*rand(1,experiment.nissues),...
-                        experiment.Domain, 10, 2, 0.5, 'GPS2N');
+                        rand(1,experiment.nissues),...
+                        experiment.Domain, 0.01, 2, 0.5, 'GPS2N');
                     tic
                     sol{imdtype, imdsgm, iagtype, k, i} = MA.Negotiate(Msh);
                     sol{imdtype, imdsgm, iagtype, k, i}.t = toc;
@@ -126,7 +84,7 @@ end
 
 %% GENERATE PRIVEVAL, SOCIAL WELFARE and NASH PRODUCT
 
-load '07-Mar-2015 09:11:36_test_UFrandom8agents8issues'
+%load '29-Sep-2015 11:21:13_test_UFBeta'
 
 
 for imdtype=1:nMdTypes

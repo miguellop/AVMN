@@ -6,11 +6,11 @@ classdef medagent < handle
         PrivEval
         ReceptionFlags
         Nround
-        DeltaTolerance = 1e-6;
+        DeltaTolerance = 1e-3;
         Msh
         Type
         Winner
-     
+                 
         D
         sg
         sigma
@@ -81,15 +81,13 @@ classdef medagent < handle
             mp = obj.Msh.meshpoints;
             ap = [cp;mp];
             % Puntos de la malla dentro del dominio
-            %validPoints = not(sum(ap<0 | ap>1, 2));
+            validPoints = not(sum(ap<0 | ap>1, 2));
             % Índices de la malla dentro del dominio
-            %validIndexes = find(validPoints);
+            validIndexes = find(validPoints);
             
-            %Gd = obj.D(validIndexes,obj.Nround);
-            %G = max(Gd);
-            Gd = obj.D(:,obj.Nround);
-            G = max(obj.D(:,obj.Nround));
-            validIndexes = 1:size(Gd,1);
+            Gd = obj.D(validIndexes,obj.Nround);
+            G = max(Gd);
+
 %             if obj.Nround<obj.sg(4)
                 obj.sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*(G)^...
                     (obj.sg(3)*(1-obj.Nround/obj.MaxRounds));
