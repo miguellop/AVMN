@@ -20,7 +20,7 @@ nMdTypes = length(experiment.Mediator.Types);
                     % 2 - YAo 
                     % 3 - DSao
                     
-experiment.Mediator.Sgm = [1000 1000 2 1010]; 
+experiment.Mediator.Sgm = [1 100 4 1010]; 
 nMdSgm = size(experiment.Mediator.Sgm,1);
                     % Sgm(1,:)=>(sgmy)
 
@@ -36,10 +36,10 @@ nAgs     =  size(experiment.Agent.Types,2);
 % NEGOCIACIÓN                           
 load (experiment.UF);
 
-uf{1}{1} = fro; % Agente 1
-uf{1}{2} = fro; % Agente 2
-uf{1}{3} = fbo; % Agente 3
-uf{1}{4} = fuo; % Agente 4
+uf{1}{1} = fr; % Agente 1
+uf{1}{2} = fl; % Agente 2
+uf{1}{3} = fb; % Agente 3
+uf{1}{4} = fu; % Agente 4
 
 fname = [datestr(clock) '_test_' experiment.UF]; 
 sol = cell(nMdTypes, nMdSgm, nAgTypes, experiment.NexpA, experiment.NexpB);
@@ -66,7 +66,7 @@ for imdtype=1:nMdTypes
                     end
                     Msh = meshdsnp(experiment.nissues,...
                         rand(1,experiment.nissues),...
-                        experiment.Domain, 0.01, 2, 0.5, 'GPS2N');
+                        experiment.Domain, 0.1, 2, 0.5, 'GPS2N');
                     tic
                     sol{imdtype, imdsgm, iagtype, k, i} = MA.Negotiate(Msh);
                     sol{imdtype, imdsgm, iagtype, k, i}.t = toc;

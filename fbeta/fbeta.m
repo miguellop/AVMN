@@ -1,6 +1,7 @@
-function f = fbeta(abc, ni, type)
+function f = fbeta(abc, ni, domain, normparams, type)
 %abc-parámetros A, B y C de la distribución Beta con parámetros A y B
 %ni-número de issues
+%domain-dominio del espacio de acuerdos
 %type- 'hom' 'het'
 % homogeneous agents: Uniform Distribution; heterogeneous agents: Beta
     if strcmp(type,'het')
@@ -32,7 +33,17 @@ function f = fbeta(abc, ni, type)
 %     
 %     maxval = -1*maxval;
 %     f = @(sc) (uc(sc, b)-minval)/(maxval-minval);
-    f = @(sc) uc(sc, b);
+    f = @(sc) ucmain(sc, b, domain, normparams);
+end
+
+function y = ucmain(sc, b, domain, normparams)
+    y = uc(sc, b);
+    y = (y+normparams(1))/normparams(2);
+    nc = size(sc, 1);
+    domainlow = repmat(domain(1,:), nc, 1);
+    domainhigh = repmat(domain(2,:), nc, 1);
+    y(sum(sc < domainlow | sc > domainhigh, 2) > 0) = 0;
+    
 end
 
 function y = uc(sc, b)

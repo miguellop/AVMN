@@ -49,22 +49,18 @@ classdef medagent < handle
             %NSao
             if obj.Type == 1
                 obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
-            elseif obj.Type == 3 %GPSao
+            %GPSao
+            elseif obj.Type == 3 
                 St = obj.devMax(obj.PubEval); %[0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
                 Sagg = sum(St);
-                if Sagg <= 0.00001 %Todos los agentes son egoístas, los transformamos a cooperativos
+                if Sagg == 0 %Todos los agentes son egoístas, los transformamos a cooperativos
                     St = ones(1,obj.Nagents);
                     Sagg = obj.Nagents;
                 end
-                
-%                 if obj.Msh.deltam>=50
-%                     wt = [0.25 0.25 0.25 0.25]
-%                 else
-                    wt = St/Sagg;
-%                 end
+                wt = St/Sagg;
                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
-                %obj.PrivEval(obj.Winner,:)
-            else % Yager
+            % Yager
+            else 
                 St = sum(obj.PubEval);
                 Sagg = sum(St);
                 if Sagg <= 0.001
@@ -88,7 +84,7 @@ classdef medagent < handle
             %Gd = obj.D(validIndexes,obj.Nround);
             %G = max(Gd);
             Gd = obj.D(:,obj.Nround);
-            G = max(obj.D(:,obj.Nround));
+            G = max(Gd);
             validIndexes = 1:size(Gd,1);
 %             if obj.Nround<obj.sg(4)
                 obj.sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*(G)^...
@@ -114,10 +110,15 @@ classdef medagent < handle
         function dm = devMax(obj, v)
             [maxv, indv] = max(v);
             for i=1:length(indv)
-                vp = v(:,i);
-                vp(indv(i)) = [];
-                diff = maxv(i) - vp;
-                dm(i) = 1-sum(diff)/(obj.Msh.npoints*maxv(i));
+                if maxv(i) == 0
+                    dm(i) = 0;
+                else
+                    vp = v(:,i);
+                    vp(indv(i)) = [];
+                    diff = maxv(i) - vp;
+                
+                    dm(i) = 1-sum(diff)/(obj.Msh.npoints*maxv(i));
+                end
             end
         end
         

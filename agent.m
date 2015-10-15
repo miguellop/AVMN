@@ -19,36 +19,22 @@ classdef agent < handle
             [ordpriveval, indpriveval] = sort(priveval,'descend');
             %CAg
             if A.Type == 1      
-                if maxpriveval == 0
-                    %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
-                    pubeval = rand(evnt.mesh.npoints+1,1)*0.01;
-                else
-                    pubeval = priveval;
-               end
+                pubeval = priveval;
             %SAg
             elseif A.Type == 2  
-                if maxpriveval == 0
-                    %pubeval = 0.01*ones(evnt.mesh.npoints+1,1);
-                    pubeval = rand(evnt.mesh.npoints+1,1)*0.01;
-                else
-                    pubeval = zeros(evnt.mesh.npoints+1, 1);
-                    pubeval(indmaxpriveval) = maxpriveval;
-                end
+                pubeval = zeros(evnt.mesh.npoints+1, 1);
+                pubeval(indmaxpriveval) = maxpriveval;
             %eCAg
             elseif A.Type == 3
-%                 if maxpriveval == 0
-%                     pubeval = rand(evnt.mesh.npoints+1,1)/10;
-%                 else
+                 if maxpriveval == 0
+                    pubeval = ones(evnt.mesh.npoints+1,1);
+                 else
                     pubeval = priveval/maxpriveval;
-%                 end
+                 end
             %eSAg
             elseif A.Type == 4
-%                 if maxpriveval == 0
-%                     pubeval = rand(evnt.mesh.npoints+1,1)/4;
-%                 else
-                    pubeval = zeros(evnt.mesh.npoints+1, 1);
-                    pubeval(indmaxpriveval) = 1;
-%                 end
+                pubeval = zeros(evnt.mesh.npoints+1, 1);
+                pubeval(indmaxpriveval) = 1;
             %Lang-Fink: Se divide la negociación en etapas. La primera
             %etapa obliga a votar con 1 por ncontracts - 1, la segunda por
             %ncontracts -2 y la última por 1 contrato sólo

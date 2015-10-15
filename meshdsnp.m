@@ -44,10 +44,10 @@ classdef meshdsnp < handle
                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
                 % Se comprueba que las variables no excedan el dominio
                 % correspondiente.
-                v1 = Msh.meshpoints > 1;
-                v0 = Msh.meshpoints < 0;
-                Msh.meshpoints(v1) = 1;
-                Msh.meshpoints(v0) = 0;
+%                 v1 = Msh.meshpoints > 1;
+%                 v0 = Msh.meshpoints < 0;
+%                 Msh.meshpoints(v1) = 1;
+%                 Msh.meshpoints(v0) = 0;
                 
             elseif strcmp(Msh.type, 'GPSN1')
                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
