@@ -38,32 +38,45 @@ classdef meshdsnp < handle
         end
         %EXPANSION
         function Expand(Msh)
-            Msh.deltam = Msh.deltam*Msh.expfactor;
-            if strcmp(Msh.type, 'GPS2N')
+%             if strcmp(Msh.type, 'GPS2N')
+                % Genero una mesh candidata con el delta actual
                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); eye(Msh.ndim, Msh.ndim)*-1];
                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
-                % Se comprueba que las variables no excedan el dominio
-                % correspondiente.
-%                 v1 = Msh.meshpoints > 1;
-%                 v0 = Msh.meshpoints < 0;
-%                 Msh.meshpoints(v1) = 1;
-%                 Msh.meshpoints(v0) = 0;
-                
-            elseif strcmp(Msh.type, 'GPSN1')
-                Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
-                Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim+1, 1)+Msh.genvect*Msh.deltam;
-            end
+                if Msh.isMeshInDomain() % Test de puntos dentro del dominio
+                    % Expando la malla
+                    Msh.deltam = Msh.deltam*Msh.expfactor;
+                else
+                    Msh.deltam = Msh.deltam;
+                end
+                Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
+%             elseif strcmp(Msh.type, 'GPSN1')
+%                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
+%                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim+1, 1)+Msh.genvect*Msh.deltam;
+%             end
         end
         %CONTRACTION
         function Contract(Msh)
             Msh.deltam = Msh.deltam*Msh.confactor;
-            if strcmp(Msh.type, 'GPS2N')
+%             if strcmp(Msh.type, 'GPS2N')
                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); eye(Msh.ndim, Msh.ndim)*-1];
                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
-            elseif strcmp(Msh.type, 'GPSN1')
-                Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
-                Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim+1, 1)+Msh.genvect*Msh.deltam;
-            end
+%             elseif strcmp(Msh.type, 'GPSN1')
+%                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
+%                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim+1, 1)+Msh.genvect*Msh.deltam;
+%             end
+        end
+        %MESH DOMAIN FUNCTIONS
+        % Prueba si la malla tiene todos los puntos externos dentro del dominio
+        function t = isMeshInDomain(Msh)
+            Tolerance = 1e-3;
+            T = Msh.meshpoints >= (Msh.domain(1,1)-Tolerance)...
+                & (Msh.meshpoints <= Msh.domain(2,1)+Tolerance);
+            t = all(T(:));
+        end
+        % Devuelve los índices de los puntos que están dentro del dominio
+        function ind = getFeasiblePoints(Msh)
+            ap = [Msh.currentpoint; Msh.meshpoints];
+            ind = find(all(ap >= Msh.domain(1,1) & ap <= Msh.domain(2,1), 2));    
         end
     end
 end

@@ -12,6 +12,7 @@ classdef medagent < handle
         Winner
      
         D
+        W
         sg
         sigma
     end
@@ -21,15 +22,26 @@ classdef medagent < handle
     end
     
     methods
+        
+        function MA = medagent(maxrounds, mediator, sg)
+            MA.MaxRounds = maxrounds;
+            MA.Type = mediator;
+            MA.sg = sg;
+        end
+        
         function output = Negotiate(MA, Msh)          
             MA.Msh = [];
             MA.Msh = Msh; MA.D = [];
+            MA.W = eye(MA.Nagents);
+            MA.sigma = MA.sg(2)+(MA.sg(1)-MA.sg(2))...
+                *(1-exp(MA.sg(3)*(1-((1:MA.MaxRounds)-1)./(MA.MaxRounds-1))))./(1-exp(MA.sg(3)));
             for i=1:MA.MaxRounds
                 MA.Nround = i;     
                 notify(MA, 'ProposeMesh', eventProposeMesh(Msh));
                 MA.waitAgentsResponses();
                 MA.computeGroupPreferences();    
                 MA.selectionProcess();
+                MA.changemediationrule();
                 convergence = MA.AssessConvergence();
                 MA.ContractsEvalReady = true; %Orden de pintado
 
@@ -37,78 +49,69 @@ classdef medagent < handle
                     break;
                 end
             end
-
-            output.agreement = MA.Msh.currentpoint;
-            output.PubEval = MA.PubEval(1,:);
-            output.PrivEval = MA.PrivEval(1,:);
-            output.D = MA.D(1,MA.Nround);
-            output.sw = sum(output.PrivEval);
+  
+            output = MA.PrivEval(1,:);
         end
               
         function computeGroupPreferences(obj)
             %NSao
             if obj.Type == 1
                 obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
-            %GPSao
-            elseif obj.Type == 3 
-                St = obj.devMax(obj.PubEval); %[0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
+            %OWA
+            elseif obj.Type == 2
+                obj.D(:, obj.Nround) = owa(obj.PubEval);
+            %DSao    
+            else
+                St = obj.devMax(obj.PubEval); % [0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
                 Sagg = sum(St);
-                if Sagg == 0 %Todos los agentes son egoístas, los transformamos a cooperativos
+                if Sagg == 0            %Todos los agentes son egoístas, los transformamos a cooperativos
                     St = ones(1,obj.Nagents);
                     Sagg = obj.Nagents;
                 end
                 wt = St/Sagg;
-                obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
-            % Yager
-            else 
-                St = sum(obj.PubEval);
-                Sagg = sum(St);
-                if Sagg <= 0.001
-                    St = ones(1,obj.Nagents);
-                    Sagg = obj.Nagents;
-                end
-                wt = St/Sagg;
+                
                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
             end
         end
         
         function selectionProcess(obj)
-            cp = obj.Msh.currentpoint;
-            mp = obj.Msh.meshpoints;
-            ap = [cp;mp];
             % Puntos de la malla dentro del dominio
-            %validPoints = not(sum(ap<0 | ap>1, 2));
-            % Índices de la malla dentro del dominio
-            %validIndexes = find(validPoints);
-            
-            %Gd = obj.D(validIndexes,obj.Nround);
-            %G = max(Gd);
-            Gd = obj.D(:,obj.Nround);
-            G = max(Gd);
-            validIndexes = 1:size(Gd,1);
-%             if obj.Nround<obj.sg(4)
-                obj.sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*(G)^...
-                    (obj.sg(3)*(1-obj.Nround/obj.MaxRounds));
-%             else
-%                 obj.sigma = obj.sg(1) + (obj.sg(2)-obj.sg(1))*(G)^...
-%                     (obj.sg(3)*(1-(obj.Nround-obj.sg(4))/(obj.MaxRounds-obj.sg(4))));
-%             end
-            P = cumsum(Gd.^obj.sigma/sum(Gd.^obj.sigma));
-            winnercontract = validIndexes(find(not(rand()>=P),1));
-            
-            %Si el winner está fuera del dominio, se selecciona otro punto
-            
+            feasiblepoints = obj.Msh.getFeasiblePoints();
+               
+            Gd = obj.D(feasiblepoints, obj.Nround);
+            sigm = obj.sigma(obj.Nround);
+            P = cumsum(Gd.^sigm/sum(Gd.^sigm));
+            winnercontract = feasiblepoints(find(not(rand() >= P), 1));
+
             if winnercontract == 1 %The maximum support is for the current contract
                 obj.Msh.Contract();
             else
                 obj.Msh.currentpoint = obj.Msh.meshpoints(winnercontract-1,:);
                 obj.Msh.Expand();
             end
+            
             obj.Winner = winnercontract;
+        end
+        
+        function owa(pubeval)
+            
+        end
+        
+        function changemediationrule(obj)
+            if obj.satisfiesmediationrule()
+                %incrementar exigencia
+            else
+                %decrementar exigencia
+            end
+        end
+        
+        function y = satisfiesmediationrule(obj)
+            y = obj.D(obj.Winner, obj.Nround);
         end
         
         function dm = devMax(obj, v)
             [maxv, indv] = max(v);
+            % recorrido de agentes
             for i=1:length(indv)
                 if maxv(i) == 0
                     dm(i) = 0;
@@ -139,7 +142,7 @@ classdef medagent < handle
             else
                 convergence = false;
             end
-            MA.Msh.deltam
+            MA.Msh.deltam;
         end
         
         function waitAgentsResponses(obj)

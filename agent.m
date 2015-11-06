@@ -3,12 +3,20 @@ classdef agent < handle
         AgentIndex %cada agente debe tener asignado un número único entero y secuencial
         UF %Utility function
         Type 
+        quotas
     end
     methods
-        function A = agent(AgentIndex, UF, MA, type)
+        function A = agent(AgentIndex, UF, MA, Typeneg, Quotas)
             A.AgentIndex = AgentIndex;
             A.UF = UF;
-            A.Type = type;
+            A.Type = Typeneg;
+            qo = Quotas(1,1);
+            qf = Quotas(1,2);
+            beta = Quotas(:,3);
+            mr = MA.MaxRounds;
+            A.quotas(1,:) = round(qf+(qo-qf)*(1-exp(beta(1)*(1-((1:mr)-1)./(mr-1))))./(1-exp(beta(1))));
+            A.quotas(2,:) = round(qf+(qo-qf)*(1-exp(beta(2)*(1-((1:mr)-1)./(mr-1))))./(1-exp(beta(2))));
+            A.quotas(3,:) = round(qf+(qo-qf)*(1-exp(beta(3)*(1-((1:mr)-1)./(mr-1))))./(1-exp(beta(3))));
             MA.RegisterAgent(A);
             addlistener(MA, 'ProposeMesh', @(src, evnt) A.ResponseStrategy(src, evnt));
         end
@@ -19,45 +27,23 @@ classdef agent < handle
             [ordpriveval, indpriveval] = sort(priveval,'descend');
             %CAg
             if A.Type == 1      
-                pubeval = priveval;
-            %SAg
-            elseif A.Type == 2  
+                pubeval = priveval/maxpriveval;
+            elseif A.Type == 2
+                nc = 1;
                 pubeval = zeros(evnt.mesh.npoints+1, 1);
-                pubeval(indmaxpriveval) = maxpriveval;
-            %eCAg
-            elseif A.Type == 3
-                 if maxpriveval == 0
-                    pubeval = ones(evnt.mesh.npoints+1,1);
-                 else
-                    pubeval = priveval/maxpriveval;
-                 end
-            %eSAg
-            elseif A.Type == 4
-                pubeval = zeros(evnt.mesh.npoints+1, 1);
-                pubeval(indmaxpriveval) = 1;
-            %Lang-Fink: Se divide la negociación en etapas. La primera
-            %etapa obliga a votar con 1 por ncontracts - 1, la segunda por
-            %ncontracts -2 y la última por 1 contrato sólo
-            elseif A.Type == 5 
-                pubeval = zeros(evnt.mesh.npoints+1, 1);
-                if src.Nround <20
-                    pubeval(indpriveval(1:3)) = 1; 
-                elseif src.Nround < 35
-                    pubeval(indpriveval(1:2)) = 1;
+                pubeval(indpriveval(1:nc)) = 1;
+            else
+                if A.Type == 31
+                    quota = A.quotas(1, src.Nround);
+                elseif A.Type == 32
+                    quota = A.quotas(2, src.Nround);
                 else
-                    pubeval(indpriveval(1)) = 1; 
+                    quota = A.quotas(3, src.Nround);
                 end
-            else 
+                
                 pubeval = zeros(evnt.mesh.npoints+1, 1);
-                if src.Msh.deltam > 15
-                    pubeval(indpriveval(1:3)) = 1; 
-                elseif src.Msh.deltam > 5
-                    pubeval(indpriveval(1:2)) = 1;
-                else
-                    pubeval(indpriveval(1)) = 1; 
-                end
+                pubeval(indpriveval(1:quota)) = 1; 
             end
-            
             src.AddMeshEval(A.AgentIndex, pubeval, priveval);
         end
     end

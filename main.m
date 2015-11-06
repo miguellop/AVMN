@@ -2,107 +2,104 @@
 % Main
 %%%%%%%%%
 clear all;
-% He fabricado experimentos con NexpA = 1 ó 5, y NexpB = 50, (10, 40) ...
-experiment.NexpA = 1; %Número de diferentes sets de funciones de utilidad
-experiment.NexpB = 1; %Número de experimentos con cada función de utilidad
-experiment.UF = 'UFBeta';
-experiment.nissues = 2;
-experiment.nagents = 2;
-experiment.Domain = [zeros(1,experiment.nissues);ones(1,experiment.nissues)];
-experiment.Mediator.MaxRounds = 100;
+draw = false;
+ni = 100;
+load(['UFB' num2str(ni) 'i']);
+nsets = length(uf);  % Número de diferentes sets de funciones de utilidad
+nexp =  20;  % Número de experimentos con cada función de utilidad
 
-experiment.draw = true;
+domain = [zeros(1, ni);...
+    ones(1, ni)];
+maxrounds = 1000;
+mediator = [1];                                 % 1:NSao 2:DGM 3:DSao
+sg = [1 100 5];
+agents = [ones(1,3);2*ones(1,3);31*ones(1,3)];% 1:CAg 2:sAg 31:quotas (beta(1)) 32:quotas (beta(2))...
 
-experiment.Mediator.Types = [3]; 
-nMdTypes = length(experiment.Mediator.Types);
+qo = 0.95*(ni*2+1); 
+qf = 1; 
+beta = [2 1 -2];
+quotas = [qo qf beta(1);qo qf beta(2);qo qf beta(3)];
+% qo quota inicial % qf quota final
+% beta: a mayor beta más rápida es la caída
+% figure;
+% mr = maxrounds;
+% t = 1:mr;
+% plot(t, ...
+%     round(qf+(qo-qf)*(1-exp(beta*(1-(t-1)/(mr-1))))/(1-exp(beta))));
 
-                    % 1 - NSao 
-                    % 2 - YAo 
-                    % 3 - DSao
-                    
-experiment.Mediator.Sgm = [1 100 4 1010]; 
-nMdSgm = size(experiment.Mediator.Sgm,1);
-                    % Sgm(1,:)=>(sgmy)
+nm          =  length(mediator); 
+ns          =  size(sg,1);     
+[nat, na]   =  size(agents); 
 
-experiment.Agent.Types = [1 1];   
-nAgTypes =  size(experiment.Agent.Types,1); 
-nAgs     =  size(experiment.Agent.Types,2);
+fname = [datestr(clock) '_test_' num2str(ni) 'i' num2str(na) 'a' num2str(mediator) 'm' num2str(nat) 'at' num2str(maxrounds) 'rs']; 
+sol = cell(nm, ns, nat, nsets);
 
-% 1 - CAg (Cooperative) 0.5 0.2 0.4 0.5 0.1
-% 2 - SAg (Selfish) 0.5 0 0 0 0
-% 3 - eCAg (Exagerate Cooperative) 1 0.6 0.4 0.3 0.1
-% 4 - eSAg (Exagerate Selfish) 1 0 0 0 0
-
-% NEGOCIACIÓN                           
-load (experiment.UF);
-
-uf{1}{1} = fr; % Agente 1
-uf{1}{2} = fl; % Agente 2
-uf{1}{3} = fb; % Agente 3
-uf{1}{4} = fu; % Agente 4
-
-fname = [datestr(clock) '_test_' experiment.UF]; 
-sol = cell(nMdTypes, nMdSgm, nAgTypes, experiment.NexpA, experiment.NexpB);
-for imdtype=1:nMdTypes
-    for imdsgm=1:nMdSgm
-        for iagtype=1:nAgTypes
-            for k=1:experiment.NexpA
-                UF = uf{k};
+for im=1:nm
+    for is=1:ns
+        for ia=1:nat
+            for iset=1:nsets
                 clear MA;
-                MA = medagent();
-                MA.MaxRounds = experiment.Mediator.MaxRounds;
-                MA.sg = experiment.Mediator.Sgm(imdsgm,:);
-                MA.Type = experiment.Mediator.Types(imdtype);
-                for i=1:nAgs
-                    Ag{i} = agent(i, UF{i}, MA, experiment.Agent.Types(iagtype,i));
+                MA = medagent(maxrounds, mediator(im), sg(is,:));
+                for i=1:na
+                    ag{i} = agent(i, uf{iset}{i}, MA, agents(ia, i),...
+                        quotas);
                 end
-                if experiment.draw
-                    v = fcnview(MA, Ag);
+                if draw
+                    v = fcnview(MA, ag);
                 end
-                for i=1:experiment.NexpB
+                for ie=1:nexp
                     clear Msh;
-                    if experiment.draw
+                    if draw
                         v.Reset(MA);
                     end
-                    Msh = meshdsnp(experiment.nissues,...
-                        rand(1,experiment.nissues),...
-                        experiment.Domain, 0.1, 2, 0.5, 'GPS2N');
+                    Msh = meshdsnp(ni,...
+                            rand(1,ni),...
+                            domain, 0.1, 2, 0.5, 'GPS2N');
                     tic
-                    sol{imdtype, imdsgm, iagtype, k, i} = MA.Negotiate(Msh);
-                    sol{imdtype, imdsgm, iagtype, k, i}.t = toc;
-                    
-                    disp(['Mediator: ' num2str(imdtype) ' Sigma: ' num2str(imdsgm-1) ' Ag: ' ...
-                        num2str(experiment.Agent.Types(iagtype,:)) ' Exp: ' num2str(k) '-' num2str(i)]);
+                    sol{im, is, ia, iset}.eval(ie,:) = MA.Negotiate(Msh);
+                    sol{im, is, ia, iset}.t(ie) = toc;
+                    disp(['Mediator: ' num2str(im) ' Sigma: ' num2str(is) ' Ag: ' ...
+                        num2str(agents(ia,:)) ' Exp: ' num2str(iset) '-' num2str(ie)]);
                 end
-                
-                save(fname, 'sol');
             end
+            save(fname, 'sol');
         end
     end
 end
-% Para calcular intervalos de confianza ttest o normfit
 
-%% GENERATE PRIVEVAL, SOCIAL WELFARE and NASH PRODUCT
-
-%load '29-Sep-2015 11:21:13_test_UFBeta'
-
-
-for imdtype=1:nMdTypes
-    for imdsgm=1:nMdSgm
-        for iagtype=1:nAgTypes
-            z=1;
-            for k=1:experiment.NexpA
-                for i=1:experiment.NexpB
-                    priveval(z,:) = sol{imdtype, imdsgm, iagtype, k, i}.PrivEval;
-                    z=z+1;
-                end
-            end
-            e(imdtype,imdsgm,iagtype).peval = priveval;
-            e(imdtype,imdsgm,iagtype).sw = sum(priveval,2);     % SOCIAL WELFARE
-            e(imdtype,imdsgm,iagtype).np = prod(priveval,2);    % NASH PRODUCT
+%% Evalperformance
+perf = evalperformance(sol,20)
+disp('                                    pd         sw         nash           kalai')
+for i=1:1
+    for j=1:1
+        for k=1:nat
+            disp(['Mediator: ' num2str(i) ' Sigma: ' num2str(j) ' Ag: ' ...
+                        num2str(agents(k,:)) ' -> '  num2str(perf{i,j,k}.stats)]);
         end
     end
 end
+% p-value y h=1|0
+% p-value indica la probabilidad de que dadas las muestras, su estadístico
+% se corresponda con la hipótesis nula. La hipótesis nula representa la
+% suposición de partida. Por ejemplo, si estamos comprobando que dos
+% experimentos tienen la misma media (es decir, que son similares), un
+% valor p-value alto indica que las muestras, con una
+% probabilidad p-value, se corresponden efectivamente con la suposición de
+% que los experimentos similares. Si p-value es muy bajo, indica que la
+% probabilidad de que las muestras se correspondan con experimentos con
+% resultados similares es muy baja. Podemos por tanto rechazar la hipótesis
+% y h=1. h=0 indica que no podemos rechazar la hipótesis.
+% En definitiva, si utilizo ranksum(a,b), y p-value es pequeño, significa
+% que a y b son diferentes, en cuyo caso h=1. Si p-value es alto, significa
+% que la hipótesis nula se confirma, y a y b son similares.
+%
+% Antes de aplicar un test no paramétrico o paramétrico, tengo que
+% comprobar la normalidad de las muestras. Para comprobar la normalidad
+% puedo utilizar ttest(). Si son normales, puedo utilizar ttest2() para
+% muestras no apareadas. Si no son normales, tengo que utilizar un test de
+% medianas no paramétrico como Wilcoxon. Para ello utilizo ranksum() si las
+% muestras no están apareadas.
+
 %% HISTOGRAMAS 3D DE UTILIDADES DE AGENTES
 figure
 nagents = 8;
