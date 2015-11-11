@@ -1,6 +1,6 @@
-function perf = evalperformance(sol, ni)
+function perf = evalperformance(negotiation)
 %  EVALPERFORMANCE Mide el rendimiento de negociaciones entre agentes.
-%   [P] = EVALPERFORMANCE(SOL, NI) retorna las distancias al frente de
+%   [P] = EVALPERFORMANCE(SOL, options) retorna las distancias al frente de
 %   pareto, solución nash y solución kalai (maximin), y social welfare de 
 %   las negociaciones contenidas en SOL. NI
 %   indica el número de issues que a su vez permite extraer el frente de
@@ -11,25 +11,28 @@ function perf = evalperformance(sol, ni)
 %   agentes negociadores, y NSETS el número de sets de funciones.
 %
 %   Copyright 2015 Miguel Á. López-Carmona, UAH.
-
-    load(['UFB' num2str(ni) 'i']);
-    [nm, ns, nat, nsets] = size(sol);
-    [nexp, na] = size(sol{1,1,1,1}.eval);
+    sol = negotiation.sol;
+    options = negotiation.options;
     
-    for im=1:nm
-        for is=1:ns
-            for ia=1:nat
+    load(['UFB' num2str(options.ni) 'i']);
+        
+    for im=1:options.nm
+        for is=1:options.ns
+            for ia=1:options.nat
+                ev = [];
                 pd = [];
                 sw = [];
                 nash = [];
                 kalai = [];
-                for iset=1:nsets
+                for iset=1:options.nsets
                     eval = sol{im,is,ia,iset}.eval;
-                    pd = [pd; getparetodist(eval, pf{iset}{na}.fval) - eval];
-                    sw = [sw; repmat(pf{iset}{na}.sw, nexp, 1) - eval];
-                    nash = [nash; repmat(pf{iset}{na}.nash, nexp, 1) - eval];
-                    kalai = [kalai; repmat(pf{iset}{na}.kalai, nexp, 1) - eval];
+                    ev = [ev; eval];
+                    pd = [pd; getparetodist(eval, pf{iset}{options.na}.fval) - eval];
+                    sw = [sw; repmat(pf{iset}{options.na}.sw, options.nexp, 1) - eval];
+                    nash = [nash; repmat(pf{iset}{options.na}.nash, options.nexp, 1) - eval];
+                    kalai = [kalai; repmat(pf{iset}{options.na}.kalai, options.nexp, 1) - eval];
                 end
+                perf{im,is,ia}.ev = ev;
                 perf{im,is,ia}.pd = sqrt(sum(pd.^2, 2))*100;
                 perf{im,is,ia}.sw = sqrt(sum(sw.^2, 2))*100;
                 perf{im,is,ia}.nash = sqrt(sum(nash.^2, 2))*100;
@@ -41,6 +44,7 @@ function perf = evalperformance(sol, ni)
             end
         end
     end
+    
 end
 
 function pd = getparetodist(eval, fval)

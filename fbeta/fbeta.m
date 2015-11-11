@@ -19,7 +19,7 @@ function f = fbeta(abc, ni, domain, type)
     else
         b = unifrnd(-1,1,1,ni*(ni+1)/2);
     end
-    options = optimset('MaxIter', 1500, 'Display', 'iter');
+    options = optimset('MaxIter', 1500, 'Display', 'final');
     
     [x, maxval] = patternsearch(@(sc) ...
         -1.*uc(sc, b), ...

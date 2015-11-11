@@ -1,6 +1,6 @@
 classdef medagent < handle
     properties
-        MaxRounds = 500;
+        MaxRounds
         Nagents = 0;
         PubEval
         PrivEval
@@ -12,7 +12,9 @@ classdef medagent < handle
         Winner
      
         D
-        W
+        priorities
+        collaboration
+        winners
         sg
         sigma
     end
@@ -29,20 +31,23 @@ classdef medagent < handle
             MA.sg = sg;
         end
         
-        function output = Negotiate(MA, Msh)          
+        function output = negotiate(MA, Msh)          
             MA.Msh = [];
             MA.Msh = Msh; MA.D = [];
-            MA.W = eye(MA.Nagents);
+            
+            MA.priorities = ones(1, MA.Nagents)./MA.Nagents;
+            MA.collaboration = ones(1, MA.Nagents);
+        
             MA.sigma = MA.sg(2)+(MA.sg(1)-MA.sg(2))...
                 *(1-exp(MA.sg(3)*(1-((1:MA.MaxRounds)-1)./(MA.MaxRounds-1))))./(1-exp(MA.sg(3)));
+            
             for i=1:MA.MaxRounds
                 MA.Nround = i;     
                 notify(MA, 'ProposeMesh', eventProposeMesh(Msh));
-                MA.waitAgentsResponses();
-                MA.computeGroupPreferences();    
-                MA.selectionProcess();
-                MA.changemediationrule();
-                convergence = MA.AssessConvergence();
+                MA.waitagents();
+                MA.computepreferences();    
+                MA.selectwinner();
+                convergence = MA.assessconvergence();
                 MA.ContractsEvalReady = true; %Orden de pintado
 
                 if convergence == true
@@ -53,13 +58,16 @@ classdef medagent < handle
             output = MA.PrivEval(1,:);
         end
               
-        function computeGroupPreferences(obj)
+        function computepreferences(obj)
             %NSao
             if obj.Type == 1
                 obj.D(:, obj.Nround) = sum(obj.PubEval,2)/obj.Nagents;
-            %OWA
+            %OWA Colaborativo
             elseif obj.Type == 2
-                obj.D(:, obj.Nround) = owa(obj.PubEval);
+                obj.D(:, obj.Nround) = obj.owa();
+            %OWA No-colaborativo
+            elseif obj.Type == 3
+                obj.D(:, obj.Nround) = obj.owa();
             %DSao    
             else
                 St = obj.devMax(obj.PubEval); % [0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
@@ -74,7 +82,7 @@ classdef medagent < handle
             end
         end
         
-        function selectionProcess(obj)
+        function selectwinner(obj)
             % Puntos de la malla dentro del dominio
             feasiblepoints = obj.Msh.getFeasiblePoints();
                
@@ -91,18 +99,47 @@ classdef medagent < handle
             end
             
             obj.Winner = winnercontract;
+            obj.winners(obj.Nround, :) = obj.PubEval(winnercontract, :); 
+            obj.setcollaboration();
+            obj.setpriorities();
         end
         
-        function owa(pubeval)
-            
-        end
-        
-        function changemediationrule(obj)
-            if obj.satisfiesmediationrule()
-                %incrementar exigencia
-            else
-                %decrementar exigencia
+        function w = getowaweights(obj, ind)
+            Q = @(x) x.^2;
+            [nrows, ncols] = size(ind);
+            r = [];
+            for i=1:nrows
+                r(i,:) = obj.priorities(ind(i,:));
             end
+            r = cumsum(r, 2);
+            w(:,1) = Q(r(:,1));
+            for i=2:ncols
+                w(:,i) = Q(r(:,i))-Q(r(:,i-1));
+            end
+        end
+                
+        function d = owa(obj)
+            [eval, ind] = sort(obj.PubEval, 2, 'descend');
+            w = obj.getowaweights(ind);
+            d = sum(eval.*w, 2);      
+        end
+        
+        function setcollaboration(obj)
+            if obj.Nround >= 10
+                obj.collaboration = sum(obj.winners(obj.Nround-9:obj.Nround, :));
+            end
+        end
+        
+        function setpriorities(obj)
+            col = obj.collaboration./sum(obj.collaboration);
+            if obj.Type == 2 % premia al colaborativo
+                obj.priorities = col;
+            elseif obj.Type == 3 % premia al no-colaborativo
+%                 obj.priorities = (1-col)./sum(1-col);
+                obj.priorities = 1./col;
+                obj.priorities = obj.priorities./sum(obj.priorities);
+            end
+            disp(obj.priorities);
         end
         
         function y = satisfiesmediationrule(obj)
@@ -125,18 +162,18 @@ classdef medagent < handle
             end
         end
         
-        function RegisterAgent(MA, A)
+        function registeragent(MA, A)
             MA.ReceptionFlags(A.AgentIndex) = 0;
             MA.Nagents = MA.Nagents+1;
         end
         
-        function AddMeshEval(MA, AgentIndex, PubEval, PrivEval)
+        function addmesheval(MA, AgentIndex, PubEval, PrivEval)
             MA.PubEval(:, AgentIndex) = PubEval;
             MA.PrivEval(:, AgentIndex) = PrivEval;
             MA.ReceptionFlags(AgentIndex) = 1;
         end
         
-        function convergence = AssessConvergence(MA)
+        function convergence = assessconvergence(MA)
             if  MA.Msh.deltam <= MA.DeltaTolerance
                 convergence = true;
             else
@@ -145,7 +182,7 @@ classdef medagent < handle
             MA.Msh.deltam;
         end
         
-        function waitAgentsResponses(obj)
+        function waitagents(obj)
             while any(obj.ReceptionFlags == 0)              
             end
             obj.ReceptionFlags = zeros(1, obj.Nagents);

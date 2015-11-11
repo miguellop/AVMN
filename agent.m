@@ -17,11 +17,11 @@ classdef agent < handle
             A.quotas(1,:) = round(qf+(qo-qf)*(1-exp(beta(1)*(1-((1:mr)-1)./(mr-1))))./(1-exp(beta(1))));
             A.quotas(2,:) = round(qf+(qo-qf)*(1-exp(beta(2)*(1-((1:mr)-1)./(mr-1))))./(1-exp(beta(2))));
             A.quotas(3,:) = round(qf+(qo-qf)*(1-exp(beta(3)*(1-((1:mr)-1)./(mr-1))))./(1-exp(beta(3))));
-            MA.RegisterAgent(A);
-            addlistener(MA, 'ProposeMesh', @(src, evnt) A.ResponseStrategy(src, evnt));
+            MA.registeragent(A);
+            addlistener(MA, 'ProposeMesh', @(src, evnt) A.responsestrategy(src, evnt));
         end
         %% RESPONSE STRATEGY
-        function ResponseStrategy(A, src, evnt)
+        function responsestrategy(A, src, evnt)
             priveval = A.UF([evnt.mesh.currentpoint; evnt.mesh.meshpoints]);
             [maxpriveval, indmaxpriveval] = max(priveval);
             [ordpriveval, indpriveval] = sort(priveval,'descend');
@@ -44,7 +44,7 @@ classdef agent < handle
                 pubeval = zeros(evnt.mesh.npoints+1, 1);
                 pubeval(indpriveval(1:quota)) = 1; 
             end
-            src.AddMeshEval(A.AgentIndex, pubeval, priveval);
+            src.addmesheval(A.AgentIndex, pubeval, priveval);
         end
     end
 end

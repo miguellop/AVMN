@@ -1,78 +1,17 @@
-%%%%%%%%%
-% Main
-%%%%%%%%%
-clear all;
-draw = false;
-ni = 100;
-load(['UFB' num2str(ni) 'i']);
-nsets = length(uf);  % Número de diferentes sets de funciones de utilidad
-nexp =  20;  % Número de experimentos con cada función de utilidad
+%% Launch negotiation
 
-domain = [zeros(1, ni);...
-    ones(1, ni)];
-maxrounds = 1000;
-mediator = [1];                                 % 1:NSao 2:DGM 3:DSao
-sg = [1 100 5];
-agents = [ones(1,3);2*ones(1,3);31*ones(1,3)];% 1:CAg 2:sAg 31:quotas (beta(1)) 32:quotas (beta(2))...
-
-qo = 0.95*(ni*2+1); 
-qf = 1; 
-beta = [2 1 -2];
-quotas = [qo qf beta(1);qo qf beta(2);qo qf beta(3)];
-% qo quota inicial % qf quota final
-% beta: a mayor beta más rápida es la caída
-% figure;
-% mr = maxrounds;
-% t = 1:mr;
-% plot(t, ...
-%     round(qf+(qo-qf)*(1-exp(beta*(1-(t-1)/(mr-1))))/(1-exp(beta))));
-
-nm          =  length(mediator); 
-ns          =  size(sg,1);     
-[nat, na]   =  size(agents); 
-
-fname = [datestr(clock) '_test_' num2str(ni) 'i' num2str(na) 'a' num2str(mediator) 'm' num2str(nat) 'at' num2str(maxrounds) 'rs']; 
-sol = cell(nm, ns, nat, nsets);
-
-for im=1:nm
-    for is=1:ns
-        for ia=1:nat
-            for iset=1:nsets
-                clear MA;
-                MA = medagent(maxrounds, mediator(im), sg(is,:));
-                for i=1:na
-                    ag{i} = agent(i, uf{iset}{i}, MA, agents(ia, i),...
-                        quotas);
-                end
-                if draw
-                    v = fcnview(MA, ag);
-                end
-                for ie=1:nexp
-                    clear Msh;
-                    if draw
-                        v.Reset(MA);
-                    end
-                    Msh = meshdsnp(ni,...
-                            rand(1,ni),...
-                            domain, 0.1, 2, 0.5, 'GPS2N');
-                    tic
-                    sol{im, is, ia, iset}.eval(ie,:) = MA.Negotiate(Msh);
-                    sol{im, is, ia, iset}.t(ie) = toc;
-                    disp(['Mediator: ' num2str(im) ' Sigma: ' num2str(is) ' Ag: ' ...
-                        num2str(agents(ia,:)) ' Exp: ' num2str(iset) '-' num2str(ie)]);
-                end
-            end
-            save(fname, 'sol');
-        end
-    end
-end
+negotiate();
 
 %% Evalperformance
-perf = evalperformance(sol,20)
+% Se debe cargar inicialmente el experimento
+
+perf = evalperformance(negotiation);
+agents = negotiation.options.agents;
+
 disp('                                    pd         sw         nash           kalai')
-for i=1:1
+for i=1:2
     for j=1:1
-        for k=1:nat
+        for k=1:1
             disp(['Mediator: ' num2str(i) ' Sigma: ' num2str(j) ' Ag: ' ...
                         num2str(agents(k,:)) ' -> '  num2str(perf{i,j,k}.stats)]);
         end
