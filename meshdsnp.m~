@@ -40,7 +40,7 @@ classdef meshdsnp < handle
         function Expand(Msh)
 %             if strcmp(Msh.type, 'GPS2N')
                 % Genero una mesh candidata con el delta actual
-                Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
+                              Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
                 if Msh.isMeshInDomain() % Test de puntos dentro del dominio
                     % Expando la malla
                     Msh.deltam = Msh.deltam*Msh.expfactor;
@@ -49,6 +49,7 @@ classdef meshdsnp < handle
                 end
                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
 %             elseif strcmp(Msh.type, 'GPSN1')
+%                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
 %                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim+1, 1)+Msh.genvect*Msh.deltam;
 %             end
         end
@@ -56,8 +57,10 @@ classdef meshdsnp < handle
         function Contract(Msh)
             Msh.deltam = Msh.deltam*Msh.confactor;
 %             if strcmp(Msh.type, 'GPS2N')
+                Msh.genvect = [eye(Msh.ndim, Msh.ndim); eye(Msh.ndim, Msh.ndim)*-1];
                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim*2, 1)+Msh.genvect*Msh.deltam;
 %             elseif strcmp(Msh.type, 'GPSN1')
+%                 Msh.genvect = [eye(Msh.ndim, Msh.ndim); ones(1, Msh.ndim)*-1];    
 %                 Msh.meshpoints = repmat(Msh.currentpoint, Msh.ndim+1, 1)+Msh.genvect*Msh.deltam;
 %             end
         end

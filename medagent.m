@@ -12,8 +12,12 @@ classdef medagent < handle
         Winner
      
         D
+        lfilter = 20
         priorities
         collaboration
+        expectedsw
+        expectedswprev
+        expectedswflag
         winners
         sg
         sigma
@@ -35,8 +39,12 @@ classdef medagent < handle
             MA.Msh = [];
             MA.Msh = Msh; MA.D = [];
             
-            MA.priorities = ones(1, MA.Nagents)./MA.Nagents;
+            MA.priorities = ones(1, MA.Nagents);
+            MA.priorities = MA.priorities/sum(MA.priorities);
             MA.collaboration = ones(1, MA.Nagents);
+            MA.expectedsw = 0;
+            MA.expectedswprev = 0;
+            MA.expectedswflag = false;
         
             MA.sigma = MA.sg(2)+(MA.sg(1)-MA.sg(2))...
                 *(1-exp(MA.sg(3)*(1-((1:MA.MaxRounds)-1)./(MA.MaxRounds-1))))./(1-exp(MA.sg(3)));
@@ -47,8 +55,11 @@ classdef medagent < handle
                 MA.waitagents();
                 MA.computepreferences();    
                 MA.selectwinner();
+                MA.updateexpectedsw();
+                MA.updatecollaboration();
+                MA.updatepriorities();
                 convergence = MA.assessconvergence();
-                MA.ContractsEvalReady = true; %Orden de pintado
+                MA.ContractsEvalReady = true; % Orden de pintado
 
                 if convergence == true
                     break;
@@ -70,15 +81,16 @@ classdef medagent < handle
                 obj.D(:, obj.Nround) = obj.owa();
             %DSao    
             else
-                St = obj.devMax(obj.PubEval); % [0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
-                Sagg = sum(St);
-                if Sagg == 0            %Todos los agentes son egoístas, los transformamos a cooperativos
-                    St = ones(1,obj.Nagents);
-                    Sagg = obj.Nagents;
-                end
-                wt = St/Sagg;
-                
-                obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
+                obj.D(:, obj.Nround) = obj.owa();
+%                 St = obj.devMax(obj.PubEval); % [0 0.3 1] Ag1-egoísta Ag2-menos egoísta Ag3-cooperativo
+%                 Sagg = sum(St);
+%                 if Sagg == 0            %Todos los agentes son egoístas, los transformamos a cooperativos
+%                     St = ones(1,obj.Nagents);
+%                     Sagg = obj.Nagents;
+%                 end
+%                 wt = St/Sagg;
+%                 
+%                 obj.D(:, obj.Nround) = sum(repmat(wt, obj.Msh.npoints+1, 1).*obj.PubEval, 2);
             end
         end
         
@@ -100,8 +112,12 @@ classdef medagent < handle
             
             obj.Winner = winnercontract;
             obj.winners(obj.Nround, :) = obj.PubEval(winnercontract, :); 
-            obj.setcollaboration();
-            obj.setpriorities();
+        end
+        
+        function d = owa(obj)
+            [eval, ind] = sort(obj.PubEval, 2, 'descend');
+            w = obj.getowaweights(ind);
+            d = sum(eval.*w, 2);      
         end
         
         function w = getowaweights(obj, ind)
@@ -117,29 +133,48 @@ classdef medagent < handle
                 w(:,i) = Q(r(:,i))-Q(r(:,i-1));
             end
         end
-                
-        function d = owa(obj)
-            [eval, ind] = sort(obj.PubEval, 2, 'descend');
-            w = obj.getowaweights(ind);
-            d = sum(eval.*w, 2);      
-        end
         
-        function setcollaboration(obj)
-            if obj.Nround >= 10
-                obj.collaboration = sum(obj.winners(obj.Nround-9:obj.Nround, :));
+        function updateexpectedsw(obj)
+            if obj.Nround >= obj.lfilter
+                obj.expectedsw = sum(sum(obj.winners(obj.Nround-obj.lfilter+1:obj.Nround, :)));
+                if obj.expectedsw > obj.expectedswprev
+                    obj.expectedswflag = false;
+                else
+                    obj.expectedswflag = true;
+                end
+                obj.expectedswprev = obj.expectedsw;
+            end
+        end
+              
+        function updatecollaboration(obj)
+            if obj.Nround >= obj.lfilter
+                obj.collaboration = sum(obj.winners(obj.Nround-obj.lfilter+1:obj.Nround, :));
             end
         end
         
-        function setpriorities(obj)
-            col = obj.collaboration./sum(obj.collaboration);
-            if obj.Type == 2 % premia al colaborativo
-                obj.priorities = col;
-            elseif obj.Type == 3 % premia al no-colaborativo
-%                 obj.priorities = (1-col)./sum(1-col);
-                obj.priorities = 1./col;
-                obj.priorities = obj.priorities./sum(obj.priorities);
+        function updatepriorities(obj)
+            if mod(obj.Nround,1)
+                return
             end
-            disp(obj.priorities);
+            if obj.Nround < obj.lfilter
+                return
+            end
+            if obj.Type == 2 % castiga a los perdedores
+                obj.priorities = ones(1, obj.Nagents);
+                [colab, indcolab] = sort(obj.collaboration, 'ascend');
+                obj.priorities(indcolab(1:obj.Nagents-3)) = 0;
+            elseif obj.Type == 3 % premia a los perdedores
+                obj.priorities = zeros(1, obj.Nagents);
+                [colab, indcolab] = sort(obj.collaboration, 'ascend');
+                obj.priorities(indcolab(1:2)) = 1;   
+            elseif obj.Type == 4 % rotar prioridad de agentes
+                if obj.expectedswflag == true
+                    obj.priorities = randperm(obj.Nagents)>0.5*obj.Nagents;
+                    %obj.priorities = circshift(obj.priorities',1)';
+                end
+            end
+            obj.priorities = obj.priorities./sum(obj.priorities);
+            %disp(obj.priorities);
         end
         
         function y = satisfiesmediationrule(obj)

@@ -9,7 +9,7 @@ perf = evalperformance(negotiation);
 agents = negotiation.options.agents;
 
 disp('                                    pd         sw         nash           kalai')
-for i=1:2
+for i=1:3
     for j=1:1
         for k=1:1
             disp(['Mediator: ' num2str(i) ' Sigma: ' num2str(j) ' Ag: ' ...
