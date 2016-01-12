@@ -49,6 +49,8 @@ function options = dgmset(varargin)
 %                       [ positive scalar ]
 %   Quotas              - Vector of Quotas
 %                       [ vector of positive integers ]
+%   QuotaType           - Type of Quota
+%                       [ 'fixed' | 'dynamic' | 'decay'| 'dynamicquota' | 'dynamicpopulationsize' ]
 %   SelectionThreshold  - The threshold to select a member from a
 %                       Population
 %                       [ positive scalar ]
@@ -77,6 +79,7 @@ if (nargin == 0) && (nargout == 0)
     fprintf('                PlotFcns: [ function_handle  | @plotrewardsfcn | @plotwinnercounter | {[]} ]\n');
     fprintf('          PopulationSize: [ positive scalar ]\n');
     fprintf('                  Quotas: [ vector of positive integers ]\n');
+    fprintf('               QuotaType: [ ''fixed'' | ''dynamic'' | ''dynamicquota'' | ''dynamicpopulationsize'' | ''decay'']\n'); 
     fprintf('      SelectionThreshold: [ positive scalar ]\n');
     fprintf('                    Swnk: [ 2D cell-array of x, fval, nash, kalai and sw ]\n\n');
     
@@ -100,7 +103,8 @@ options=struct('AgentType', [], ...
                'Swnk', [], ...
                'Plot', [], ...
                'PlotFcns', [], ...
-               'Quotas', []);
+               'Quotas', [], ...
+               'QuotaType', []);
 
 % If we pass in a function name then return the defaults.
 if (numberargs==1) && (ischar(varargin{1}) || isa(varargin{1},'function_handle') )
@@ -243,6 +247,10 @@ switch field
     case {'Plot'}
         if ~isa(value,'char') || ~any(strcmpi(value,{'off','on'}))            
             error(message('dgm:DGMSET:checkfield:NotADisplayType','OPTIONS',field,'off','iter','diagnose','final'));
+        end
+    case {'QuotaType'}
+        if ~isa(value,'char') || ~any(strcmpi(value,{'dynamic','dynamicquota','dynamicpopulationsize','fixed', 'decay'}))            
+            error(message('dgm:DGMSET:checkfield:NotADisplayType','OPTIONS',field,'dynamic','dynamicquota','dynamicpopulationsize','fixed', 'decay'));
         end
     case {'Generations','Nexp','Nsets','Nag','Ni'} % integer including inf or default string
         if ~(isscalar(value) && isa(value,'double') && value >= 0) && ...

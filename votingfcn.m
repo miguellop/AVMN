@@ -1,10 +1,10 @@
-function [scores] = votingfcn(thisPopulation,quota,CurrentAgents,options)
+function [scores] = votingfcn(y,quota,AgentType)
     
-    switch options.AgentType
+    switch AgentType
 
         case {'quotas'}
             
-            [scores, ind] = sort(CurrentAgents(thisPopulation), 'descend');
+            [scores, ind] = sort(y, 'descend');
             scores = scores*0;
 
             for i=1:size(scores,2)

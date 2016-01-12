@@ -1,7 +1,7 @@
 function state = negotiate()
    
     load ('UF100i');
-    qo = 50; qf = 50;
+    qf = 1;
    
     options = dgmset('Swnk', swnk, ...
                     'Agents', uf , ...
@@ -11,23 +11,26 @@ function state = negotiate()
                     'Ni', 100, ...
                     'Nsets', 1, ...
                     'Nexp', 1, ...
-                    'SelectionThreshold', 1,...
+                    'SelectionThreshold', [], ...
                     'Generations', 100, ...
-                    'PopulationSize', 100, ...
+                    'PopulationSize', 20, ...
                     'Plot', 'on', ...
-                    'PlotFcn', {@plotrewardsfcn,@plotwinnercounterfcn});
-                
-    options = dgmset(options, 'Quotas', ...
-        round(qf+(qo-qf)*(1-exp(2*(1-((1:options.Generations+1)-1)./(options.Generations))))./(1-exp(2))));          
+                    'PlotFcn', {@plotrewardsfcn,@plotwinnercounterfcn}, ...
+                    'QuotaType', 'decay');
     
     state.AgentPriorities = ones(1,options.Nag)/options.Nag;
     state.Score = [];               %Votos emitidos sobre el hijo ganador
     state.Expectation = [];         %Agregación de votos del hijo ganador
+    state.Quota = options.PopulationSize*0.75;
+    qo = state.Quota;
+    state.PopulationSize = options.PopulationSize;
+    state.MaxPopulationSize = options.PopulationSize;
     state.Results.x = [];
     state.Results.y = [];  
-    
+    options = dgmset(options, 'Quotas', ...
+        round(qo+(qf-qo)*linspace(0,1,options.Generations)));
+        %round(qf+(qo-qf)*(1-exp(2*(1-((1:options.Generations+1)-1)./(options.Generations))))./(1-exp(2))));
     pd = []; sw = []; nash = []; kalai = [];
-    
     %%Bucle de Sets
     for i=1:options.Nsets
         CurrentAgents = '@(x) [';
@@ -43,24 +46,59 @@ function state = negotiate()
         %%Bucle de Experimentos por Set       
         for j=1:options.Nexp
             fprintf(' %i - ', j);
+            
             %Bucle de Generaciones
             thisPopulation = creationfcn(options.PopulationSize,options.Ni);
+            fval = CurrentAgents(thisPopulation);
+            prevScore = zeros(1,options.Nag);
+    
             for k=1:options.Generations
-                quota = options.Quotas(k);
+                score = votingfcn(fval,state.Quota,options.AgentType);
+                expectation = aggregationfcn(score,state.AgentPriorities,options.MediationType);
+                selection = selectionfcn(expectation,k,options.Generations);
+                                
+                state.Score(k,:) = score(selection,:) + prevScore;
+                prevScore = state.Score(k,:);
+
+                state.Expectation(k) = expectation(selection);
                 
-                score = votingfcn(thisPopulation,quota,CurrentAgents,options);
-                expectation = aggregationfcn(score,state.AgentPriorities,options);
-                selection = selectionfcn(expectation,options.SelectionThreshold);
-                thisPopulation = mutationfcn(thisPopulation(selection,:),options.PopulationSize);
-                
-                state.Score(k,:) = score(selection,:);
-                state.Expectation(k) = expectation(selection,:);
-                
-                plotrewardsfcn(options,CurrentAgents,k,thisPopulation(1,:));
+                thisPopulation = mutationfcn(thisPopulation(selection,:),state.PopulationSize);
+                fval = CurrentAgents(thisPopulation);
+
+                if strcmp(options.Plot,'on')
+                    subplot(3,2,1);
+                    plotrewardsfcn(options.Generations,fval(1,:),k);
+                    subplot(3,2,2);
+                    plotexpectationfcn(options.Generations,k,expectation(selection));
+                    subplot(3,2,3);
+                    plotcumscorefcn(options.Generations,k,prevScore);
+                    subplot(3,2,4);
+                    plotscorefcn(options.Generations,k,score(selection,:));
+                    subplot(3,2,5);
+                    if state.PopulationSize>state.MaxPopulationSize
+                        state.MaxPopulationSize = state.PopulationSize;
+                    end
+                    plotquotafcn(options.Generations,state.MaxPopulationSize,k,state.Quota,state.PopulationSize);
+                    subplot(3,2,6);
+                    plotxfcn(thisPopulation(1,:),options.Ni);
+                end
+                switch options.QuotaType
+                    case 'fixed'
+                        state.Quota = state.PopulationSize*0.5;
+                    case 'dynamic'
+                        state = updatepopulationsizefcn(state,k);
+                        state = updatequotafcn(state,k);
+                    case 'decay'
+                        state.Quota = options.Quotas(k);
+                    case 'dynamicquota'
+                        state = updatequotafcn(state,k);
+                    case 'dynamicpopulationsize'
+                        state = updatepopulationsizefcn(state,k);
+                end
             end
             
             x(j,:) = thisPopulation(1,:);
-            y(j,:) = CurrentAgents(x(j,:));
+            y(j,:) = fval(1,:);
         end
         
         state.Results.x = [state.Results.x;x];

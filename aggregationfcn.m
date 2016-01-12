@@ -1,8 +1,8 @@
-function expectation = aggregationfcn(score,AgentPriorities,options)
+function expectation = aggregationfcn(score,AgentPriorities,MediationType)
 % AGGREGATION Aggregates Agents' preferences
-    switch options.MediationType
+    switch MediationType
         case {'additive'}
-            expectation = sum(score, 2)/options.Nag;
+            expectation = sum(score, 2)/size(score,2);
         case {'dgm1','dgm2','dgm3'}
             expectation = owa(score,AgentPriorities);
     end
