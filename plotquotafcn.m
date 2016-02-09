@@ -7,19 +7,18 @@ function plotquotafcn(generations,MaxPopulationSize,generation,quota,popsize)
             set(gca,'ylim',[0,MaxPopulationSize]);
             xlabel('Generation','interp','none');
             ylabel('Quota','interp','none');
-            plotquota = plot(generation, quota, 'o', 'MarkerSize', 5);
+            plotquota = plot(generation, quota);
             set(plotquota,'Tag','plotquota');
             title('Quota','interp','none')
             box off;grid off;
         case generations
-            LegnD = legend('Quota');
-            set(LegnD,'FontSize',8);
+            
             hold off;
         otherwise
-            set(gca,'ylim',[0,MaxPopulationSize]);
+            set(gca,'ylim',[0,MaxPopulationSize+5]);
             plotquota = findobj(get(gca,'Children'),'Tag','plotquota');
-            plot(generation, [quota popsize], 'o', 'MarkerSize', 5);
-            
+            plot(generation, quota, 'x',generation, popsize, 'o', 'MarkerSize', 3);
+          
         
     end
 end

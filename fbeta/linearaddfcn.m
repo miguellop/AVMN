@@ -1,4 +1,4 @@
-function f = linearaddfcn(ni,type,params)
+function f = linearaddfcn(ni,coeffs)
 %   F = LINEARADDFCN(NI, TYPE, PARAMS) crea una función de utilidad aditiva binaria por defecto.
 %   Se puede extender a función aditiva real.
 %
@@ -7,12 +7,12 @@ function f = linearaddfcn(ni,type,params)
 %   los parámetros específicos de un determinado TYPE de función de utilidad.
 %
 %   Se contempla una función U(c) = sum_p=1->I sum_q=p->I (P(p,q))*dq*dp))
-%   TYPE y PARAMS determinan los ni*(ni+1)/2 coeficientes P(p,q) que se van a
+%   COEFFS define los ni*(ni+1)/2 coeficientes P(p,q) que se van a
 %   utilizar.
 %
 %   F es una función de NI issues vectorizada.
 
-    coeffs = triu(unifrnd(-100,100,ni,ni));
+    coeffs = triu(coeffs);
     f = @(x) fcn(x,coeffs);
 
     options = gaoptimset;

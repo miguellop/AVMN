@@ -9,7 +9,7 @@ function expectation = aggregationfcn(score,AgentPriorities,MediationType)
 end
 
 function expectation = owa(score,AgentPriorities)
-    Q = @(x) x.^2;
+    Q = @(x) x;
     
     [expectation, ind] = sort(score, 2, 'descend');
     [nrows, ncols] = size(ind);

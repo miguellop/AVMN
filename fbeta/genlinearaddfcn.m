@@ -1,4 +1,4 @@
-function genlinearaddfcn(ni, nrows, ncols) 
+function genlinearaddfcn(ni, nrows, nagents, type) 
 %GENLINEARADDFCN crea y almacena un cell-array 'uf' de tamaño {NROW}{NCOLS} de
 %   funciones de utilidad FCNADD homogéneas de NI issues.
 %
@@ -20,40 +20,59 @@ options = gaoptimset;
 options = gaoptimset(options,'Display', 'off');
 options = gaoptimset(options,'Vectorized', 'on');
 options = gaoptimset(options,'PopulationType', 'bitstring'); 
-options = gaoptimset(options,'PopulationSize', 1000); 
+
 
 disp('Generating FCNADD functions ...');
 
+if strcmp(type,'uniform')
+    fcoeffs{1} = @() unifrnd(-100,100,ni,ni);
+    lc = 1;
+    filename = 'UFhom';
+else
+    fcoeffs{1} = @() (betarnd(1,1,ni,ni)-0.5)*100;
+    fcoeffs{2} = @() (betarnd(5,5,ni,ni)-0.5)*100;
+    fcoeffs{3} = @() (betarnd(6,2,ni,ni)-0.75)*100;
+    fcoeffs{4} = @() (betarnd(2,6,ni,ni)-0.25)*100;
+    lc = 4;
+    filename = 'UFhet';
+end
+
 for i=1:nrows
-    for j=1:ncols
+    for j=1:nagents(end)
         disp(['FCNADD:' num2str(i) ',' num2str(j)]);
-        uf{i,j} = linearaddfcn(ni);
+        
+        uf{i,j} = linearaddfcn(ni,fcoeffs{randi(lc)}());
     end
 end
 
 disp('Computing SW, Nash and Kalai ...');
 
 for i=1:nrows
-    for j=2:ncols
-        disp(['SWNK: Set: ' num2str(i) '- Agents: ' num2str(j)]);
-        
-        f = '@(x) -1*[';
-        for k=1:j-1
-            f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x),'];
+    for j=nagents
+        if j<=3
+            %%%PD
+            disp(['PD: Set: ' num2str(i) '- Agents: ' num2str(j)]);
+
+            f = '@(x) -1*[';
+            for k=1:j-1
+                f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x),'];
+            end
+            f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)]']);
+            options = gaoptimset(options,'PopulationSize', 1000); 
+            [x, fval] = gamultiobj(f, ni, [], [], [], [], [], [], options);
+            fval = -1*fval;
+
+            swnk{i,j}.x = x;       
+            swnk{i,j}.fval = fval;
+            % Aproximación a nash y kalai desde el set pareto
+    %         [~,ind] = max(prod(fval,2));
+    %         swnk{i,j}.nashpf = fval(ind,:);
+    %         [~,ind] = max(min(fval,[],2));
+    %         swnk{i,j}.kalaipf = fval(ind,:);
         end
-        f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)]']);
-        
-        [x, fval] = gamultiobj(f, ni, [], [], [], [], [], [], options);
-        fval = -1*fval;
-        
-        swnk{i,j}.x = x;       
-        swnk{i,j}.fval = fval;
-        % Aproximación a nash y kalai desde el set pareto
-        [~,ind] = max(prod(fval,2));
-        swnk{i,j}.nash = fval(ind,:);
-        [~,ind] = max(min(fval,[],2));
-        swnk{i,j}.kalai = fval(ind,:);
-        
+        %%%SW
+        options = gaoptimset(options,'PopulationSize', 200); 
+        disp(['SW: Set: ' num2str(i) '- Agents: ' num2str(j)]);
         f = '@(x) -1*[';
         for k=1:j-1
             f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x)+'];
@@ -69,8 +88,42 @@ for i=1:nrows
         f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)]']);
         
         swnk{i,j}.sw = f(x);
+        %%%NASH
+        disp(['NASH: Set: ' num2str(i) '- Agents: ' num2str(j)]);
+        f = '@(x) -1*[';
+        for k=1:j-1
+            f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x).*'];
+        end
+        f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)]']);
+        
+        [x] = ga(f, ni,[],[],[],[],[],[],[],[],options);
+        
+        f = '@(x) [';
+        for k=1:j-1
+            f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x),'];
+        end
+        f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)]']);
+        
+        swnk{i,j}.nash = f(x);
+        %%%KALAI
+        disp(['KALAI: Set: ' num2str(i) '- Agents: ' num2str(j)]);
+        f = '@(x) -1*min([';
+        for k=1:j-1
+            f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x),'];
+        end
+        f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)],[],2)']);
+        
+        [x] = ga(f, ni,[],[],[],[],[],[],[],[],options);
+        
+        f = '@(x) [';
+        for k=1:j-1
+            f = [f, 'uf{' num2str(i) ',' num2str(k) '}(x),'];
+        end
+        f = eval([f, 'uf{' num2str(i) ',' num2str(j) '}(x)]']);
+        
+        swnk{i,j}.kalai = f(x);
     end     
 end
 
-save(['UF' num2str(ni) 'i'], 'uf', 'swnk');
+save(filename, 'uf', 'swnk');
 end

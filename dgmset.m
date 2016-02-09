@@ -30,6 +30,8 @@ function options = dgmset(varargin)
 %                       [ 'off' | 'iter' | 'diagnose' | {'final'} ]
 %   Generations         - Maximum number of generations allowed
 %                       [ positive scalar ]
+%   Initial Quota       - Initial Quota
+%                       [ positive scalar ]
 %   MediationType       - The type of mediator
 %                       [ 'additive' | 'dgm1' | {'additive'} ]
 %   Nag                 - Number of agents 
@@ -70,6 +72,7 @@ if (nargin == 0) && (nargout == 0)
 
     fprintf('                 Display: [ ''off'' | ''iter'' | ''diagnose'' | {''final''} ]\n');
     fprintf('             Generations: [ positive scalar ]\n');
+    fprintf('            InitialQuota: [ positive scalar ]\n');
     fprintf('                     Nag: [ positive scalar ]\n');
     fprintf('                      Ni: [ positive scalar ]\n');
     fprintf('                   Nsets: [ positive scalar ]\n');
@@ -91,6 +94,7 @@ numberargs = nargin;
 %Return options with default values and return it when called with one output argument
 options=struct('AgentType', [], ...
                'Agents', [], ...
+               'InitialQuota', [], ...
                'MediationType', [], ...
                'PopulationSize', [], ...
                'Nag', [], ...
@@ -252,7 +256,7 @@ switch field
         if ~isa(value,'char') || ~any(strcmpi(value,{'dynamic','dynamicquota','dynamicpopulationsize','fixed', 'decay'}))            
             error(message('dgm:DGMSET:checkfield:NotADisplayType','OPTIONS',field,'dynamic','dynamicquota','dynamicpopulationsize','fixed', 'decay'));
         end
-    case {'Generations','Nexp','Nsets','Nag','Ni'} % integer including inf or default string
+    case {'Generations','InitialQuota','Nexp','Nsets','Nag','Ni'} % integer including inf or default string
         if ~(isscalar(value) && isa(value,'double') && value >= 0) && ...
                 ~strcmpi(value, '200*numberOfVariables') && ...
                 ~strcmpi(value, '100*numberOfVariables')

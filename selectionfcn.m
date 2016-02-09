@@ -1,4 +1,4 @@
-function selection = selectionfcn(expectation,k,generations)
+function selection = selectionfcn(expectation,k)
 % Selección probabilística
 % so = 10;
 % sf = 10;
