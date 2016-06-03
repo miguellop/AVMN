@@ -112,6 +112,7 @@
     % restricciones K-arias. p.ej. para tres variables
     %
     %   1-aria...
+    %          X1              X2               X3
     %   [1 3; 4 6; 7 10][1 2; 3 8; 9 10][1 3; 4 5; 6 10]
     %   2-aria...
     %   [1 2; 3 6; 7 10][1 7; 8 9; 10 10][1 2; 3 4; 5 10]
